@@ -11,7 +11,7 @@ Variant::Payload::Payload(std::string type, std::string value)
 
 bool Variant::Payload::empty() const
 {
-    return _type.empty() && _value.empty(); 
+    return _type.empty(); 
 }
 
 const std::string& Variant::Payload::type() const
@@ -26,9 +26,9 @@ const std::string& Variant::Payload::value() const
 
 
 Variant::Variant(std::string name, bool enabled, std::optional<Payload> payload)
-            : _name(std::move(name)), _enabled(enabled), _payload(std::move(payload)) 
+            : _name(std::move(name)), _enabled(enabled)
 {
-
+    if(_enabled && payload.has_value()) _payload = payload;
 }
 
 const std::string& Variant::name() const 
@@ -51,21 +51,10 @@ const std::optional<Variant::Payload>& Variant::payload() const
     return _payload;
 }
 
-Variant& Variant::setPayload(Variant::Payload p)
-{
-    _payload = std::move(p);
-    return *this;
-}
-
-Variant& Variant::clearPayload()
-{
-    _payload.reset();
-    return *this;
-}
 
 Variant Variant::disabledFactory()
 {
-    return Variant("disabled", false, std::nullopt);
+    return Variant("disabled");
 }
 
 

@@ -35,7 +35,7 @@ public:
     
     Variant() = default;
     
-    Variant(std::string name, bool enabled, std::optional<Payload> payload = std::nullopt);
+    Variant(std::string name, bool enabled = false, std::optional<Payload> payload = std::nullopt);
     
     const std::string& name() const;
     
@@ -44,10 +44,6 @@ public:
     bool hasPayload() const;
     
     const std::optional<Payload>& payload() const;
-    
-    Variant& setPayload(Payload p);
-    
-    Variant& clearPayload();
     
     static Variant disabledFactory();
 
