@@ -1,26 +1,38 @@
 #include <gtest/gtest.h>
 #include "unleash/Domain/context.hpp"
+#include "unleash/Utils/utils.hpp"
 
 using unleash::Context;
 
 TEST(ContextTest, ConstructorSetsRequiredFields)
 {
-    Context ctx("myApp", "prod", "123568941");
+    Context ctx("myApp", "123568941");
     EXPECT_EQ(ctx.getAppName(), "myApp");
-    EXPECT_EQ(ctx.getEnvironment(), "prod");
     EXPECT_EQ(ctx.getSessionId(), "123568941");
 }
 
+TEST(ContextTest, ConstructorSetNoField)
+{
+    Context ctx{};
+    EXPECT_EQ(ctx.getAppName(), std::string(utils::defaultAppName));
+    EXPECT_FALSE(ctx.getSessionId().empty());
+    
+}
+
+
+
 TEST(ContextTest, OptionalFieldsAreEmptyByDefault)
 {
-    Context ctx("myApp", "prod");
+    Context ctx("myApp");
     auto sessionId  = ctx.getSessionId();
 
     EXPECT_FALSE(ctx.hasUserId());
+    EXPECT_FALSE(ctx.hasEnvironment());
     EXPECT_FALSE(ctx.hasRemoteAddress());
     EXPECT_FALSE(ctx.hasCurrentTime());
 
     EXPECT_FALSE(ctx.getUserId().has_value());
+    EXPECT_FALSE(ctx.getEnvironment().has_value());
     EXPECT_FALSE(ctx.getRemoteAddress().has_value());
     EXPECT_FALSE(ctx.getCurrentTime().has_value());
     //verify that _sessionId is not empty:
@@ -30,7 +42,7 @@ TEST(ContextTest, OptionalFieldsAreEmptyByDefault)
 
 TEST(ContextTest, SettersSetAndEmptyResets)
 {
-    Context ctx("myApp", "prod");
+    Context ctx("myApp");
 
     ctx.setUserId("u1");
     ASSERT_TRUE(ctx.hasUserId());
@@ -47,37 +59,9 @@ TEST(ContextTest, SettersSetAndEmptyResets)
     EXPECT_FALSE(ctx.hasRemoteAddress());
 }
 
-TEST(ContextTest, CurrentTimeValidFormatSetsValue)
-{
-    Context ctx("myApp", "prod");
-
-    // Exactly 24 chars, strict regex in your verifyCurrentTimeFormat:
-    // YYYY-MM-DDTHH:MM:SS.mmmZ
-    ctx.setCurrentTime("2026-01-26T10:15:30.123Z");
-    ASSERT_TRUE(ctx.hasCurrentTime());
-    EXPECT_EQ(*ctx.getCurrentTime(), "2026-01-26T10:15:30.123Z");
-}
-
-TEST(ContextTest, CurrentTimeInvalidFormatIsIgnored)
-{
-    Context ctx("myApp", "prod");
-
-    // Missing milliseconds
-    ctx.setCurrentTime("2026-01-26T10:15:30Z");
-    EXPECT_FALSE(ctx.hasCurrentTime());
-
-    // Wrong length
-    ctx.setCurrentTime("2026-01-26T10:15:30.12Z");
-    EXPECT_FALSE(ctx.hasCurrentTime());
-
-    // Bad millis range or malformed
-    ctx.setCurrentTime("2026-01-26T10:15:30.9999Z");
-    EXPECT_FALSE(ctx.hasCurrentTime());
-}
-
 TEST(ContextTest, SetPropertyAddsAndUpdates)
 {
-    Context ctx("myApp", "prod");
+    Context ctx("myApp");
 
     ctx.setProperty("tenant", "acme");
     ASSERT_EQ(ctx.getProperties().size(), 1u);
@@ -92,7 +76,7 @@ TEST(ContextTest, SetPropertyAddsAndUpdates)
 
 TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
 {
-    Context ctx("myApp", "prod");
+    Context ctx("myApp");
 
     ctx.setProperty("", "x");
     EXPECT_TRUE(ctx.getProperties().empty());
@@ -102,4 +86,13 @@ TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
     ctx.setProperty("appName", "x");
     ctx.setProperty("currentTime", "x");
     EXPECT_TRUE(ctx.getProperties().empty());
+}
+
+TEST(ContextTest, SetCurrentTimeProperty)
+{
+    Context ctx("myApp");
+    EXPECT_FALSE(ctx.hasCurrentTime());
+
+    ctx.setCurrentTime();
+    EXPECT_TRUE(ctx.hasCurrentTime());
 }

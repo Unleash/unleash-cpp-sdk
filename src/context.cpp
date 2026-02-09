@@ -12,12 +12,15 @@ namespace unleash
 {
 
     
-Context::Context(const std::string& p_appName, const std::string& p_environment, const std::string& p_sessionId)
-                : _appName(p_appName), _environment(p_environment), _sessionId(p_sessionId)
+Context::Context(const std::string& p_appName, const std::string& p_sessionId)
+                : _appName(p_appName), _sessionId(p_sessionId)
 {
     if(_sessionId.empty() ) this->resolveSessionId(); 
 }    
 
+bool Context::hasEnvironment() const {
+    return _environment.has_value();
+}
 
 bool Context::hasUserId() const {
     return _userId.has_value();
@@ -31,19 +34,24 @@ bool Context::hasCurrentTime() const {
     return _currentTime.has_value();
 }
 
-
 const std::string& Context::getAppName() const       
 { 
     return _appName; 
-}
-const std::string& Context::getEnvironment() const   
-{ 
-    return _environment; 
 }
 
 const std::string& Context::getSessionId() const
 {
     return _sessionId;
+}
+
+const Context::Properties& Context::getProperties() const 
+{
+    return _properties;
+}
+
+const std::optional<std::string>& Context::getEnvironment() const
+{
+    return _environment;
 }
 
 const std::optional<std::string>& Context::getUserId() const
@@ -61,9 +69,13 @@ const std::optional<std::string>& Context::getCurrentTime() const
     return _currentTime;
 }
 
-const Context::Properties& Context::getProperties() const 
+
+
+Context& Context::setEnvironment(const std::string& p_environment)
 {
-    return _properties;
+    if (p_environment.empty()) _environment.reset();
+    else _environment = p_environment;
+    return *this;
 }
 
 Context& Context::setUserId(const std::string& p_userId)
@@ -80,43 +92,11 @@ Context& Context::setRemoteAddress(const std::string& p_remoteAddress)
     return *this;
 }
 
-bool Context::verifyCurrentTimeFormat(const std::string& timeValue)
+
+
+Context& Context::setCurrentTime()
 {
-    if (timeValue.length() != 24) {
-        return false;
-    }
-
-    std::regex pattern(R"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)");
-    if (!std::regex_match(timeValue, pattern)) {
-        return false;
-    }
-
-    std::istringstream ss(timeValue);
-    std::tm t = {};
-    ss >> std::get_time(&t, "%Y-%m-%dT%H:%M:%S");
-    
-    if (ss.fail()) {
-        return false;
-    }
-
-    char dot, z;
-    int millis;
-    ss >> dot >> millis >> z;
-    
-    return !ss.fail() && dot == '.' && z == 'Z' && 
-           millis >= 0 && millis <= 999;
-}
-
-
-
-Context& Context::setCurrentTime(const std::string& p_currentTime)
-{
-    if (p_currentTime.empty()) _currentTime.reset();
-    if(!verifyCurrentTimeFormat(p_currentTime)) {
-        //define a logging strategy here!
-        return *this;
-    }
-    _currentTime = p_currentTime;
+    _currentTime = utils::getISO8601CurrentTimeStamp();
     return *this;
 }
 
