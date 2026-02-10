@@ -31,10 +31,6 @@ bool FlagStore::isReady() const noexcept
     return _ready.load(std::memory_order_acquire);
 }
 
-std::shared_ptr<const ToggleSet> FlagStore::getToggleSet() const noexcept
-{
-    return std::atomic_load(&_snapshot);
-}
 
 
 }// namespace unleash

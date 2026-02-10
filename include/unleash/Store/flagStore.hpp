@@ -23,9 +23,6 @@ public:
     
     bool isReady() const noexcept;
 
-    std::shared_ptr<const ToggleSet> getToggleSet() const noexcept;
-
-
 private:
 
     mutable std::shared_ptr<const ToggleSet> _snapshot;
