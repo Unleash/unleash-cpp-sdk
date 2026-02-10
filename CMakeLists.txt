@@ -15,6 +15,9 @@ add_library(unleash_sdk STATIC ${UNLEASH_SDK_SOURCES})
 target_include_directories(unleash_sdk PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_compile_definitions(unleash_sdk PUBLIC
+  UNLEASH_SDK_VERSION="${PROJECT_VERSION}"
+)
 
 # ---- Tests (GoogleTest)
 include(FetchContent)
@@ -33,6 +36,8 @@ file(GLOB_RECURSE UNLEASH_TEST_SOURCES
 )
 
 add_executable(unleash_tests ${UNLEASH_TEST_SOURCES})
+
+
 
 target_link_libraries(unleash_tests PRIVATE
     unleash_sdk
