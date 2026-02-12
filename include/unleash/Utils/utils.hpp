@@ -21,10 +21,17 @@ inline constexpr std::string_view sdkVersion = "unleash-cpp-sdk:" UNLEASH_SDK_VE
 inline constexpr std::string_view agentVersion = "unleash-cpp-sdk/" UNLEASH_SDK_VERSION;
 inline constexpr std::string_view metricsExtansion = "/client/metrics";
 inline constexpr std::string_view defaultAppName = "unleash-client-app";
+inline constexpr std::string_view defaultHeadeName = "authorization";
+inline constexpr std::string_view defaultInstanceId = "cppApplication";
+
 
 inline constexpr int httpStatusOkLower = 200;
 inline constexpr int httpStatusOkUpper = 300;
 inline constexpr int httpStatusNoUpdate = 304;
+
+using contextProperties = std::vector<std::pair<std::string,std::string>>;
+using seconds = std::chrono::seconds;
+using mSeconds = std::chrono::milliseconds;
 
 static std::string fromMsTsToUtcTime(std::int64_t p_msTimeStamp) {
     //Get second and fraction milliseconds: 
@@ -82,6 +89,23 @@ static std::string getISO8601CurrentTimeStamp()
         << std::setfill('0') << std::setw(2) << offset_minutes;
     
     return oss.str();
+}
+
+static std::string uuidv4Generator()
+{
+    static constexpr char hex[] = "0123456789abcdef";
+    std::string s = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
+
+    thread_local std::mt19937 gen{ std::random_device{}() };
+    std::uniform_int_distribution<int> dist(0, 15);
+
+    std::transform(s.begin(), s.end(), s.begin(), [&](char c) {
+        if (c == 'x') return hex[dist(gen)];
+        if (c == 'y') return hex[(dist(gen) & 0x3) | 0x8];
+        return c;
+    });
+
+    return s;
 }
 
 
