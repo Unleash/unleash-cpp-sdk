@@ -42,7 +42,7 @@ public:
     ClientConfig& setImpressionDataAll(bool v);
     ClientConfig& setUsePostRequests(bool v);
     ClientConfig& setTimeOutQuery(utils::mSeconds m);
-    ClientConfig& setTogglesStorageTTL(utils::seconds ttl);
+    //ClientConfig& setTogglesStorageTTL(utils::seconds ttl);
 
 
     //getters: 
@@ -61,7 +61,6 @@ public:
     bool impressionDataAll() const;
     bool usePostRequests() const;
     utils::mSeconds timeOutQuery() const;
-    utils::seconds togglesStorageTTL() const;
 
     bool isRefreshEnabled() const;
     bool isMetricsEnabled() const;
@@ -87,12 +86,7 @@ private:
     std::string _instanceId = std::string(utils::defaultInstanceId);
     utils::mSeconds _timeOutQueryMS{5};
 
-    utils::seconds _togglesStorageTTL{0};
-
-
-
-
-
+    
 };
 
 

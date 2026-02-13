@@ -93,12 +93,6 @@ ClientConfig& ClientConfig::setTimeOutQuery(utils::mSeconds m)
     return *this;
 }
 
-ClientConfig& ClientConfig::setTogglesStorageTTL(utils::seconds ttl)
-{
-    _togglesStorageTTL = ttl;
-    return *this;
-}
-
 const std::string& ClientConfig::url() const
 {
     return _url;
@@ -174,11 +168,6 @@ utils::mSeconds ClientConfig::timeOutQuery() const
     return _timeOutQueryMS;
 }
 
-utils::seconds ClientConfig::togglesStorageTTL() const
-{
-    return _togglesStorageTTL;
-}
-
 bool ClientConfig::isRefreshEnabled() const
 {
     return (_refreshInterval.count() > 0);
@@ -192,7 +181,7 @@ bool ClientConfig::isValid()
 {
     if( _url.empty() || _clientKey.empty() || 
         _refreshInterval.count() < 0 || _metricsInterval.count() < 0 || 
-        _metricsIntervalInitial.count() < 0 || _togglesStorageTTL.count() < 0)
+        _metricsIntervalInitial.count() < 0)
     {
         //define a logging strategy here! 
         return false;
