@@ -16,6 +16,8 @@
 #endif
 
 
+
+
 namespace utils {
 inline constexpr std::string_view sdkVersion = "unleash-cpp-sdk:" UNLEASH_SDK_VERSION;
 inline constexpr std::string_view agentVersion = "unleash-cpp-sdk/" UNLEASH_SDK_VERSION;
@@ -33,6 +35,7 @@ using contextProperties = std::vector<std::pair<std::string,std::string>>;
 using seconds = std::chrono::seconds;
 using mSeconds = std::chrono::milliseconds;
 
+inline constexpr unsigned int maxEventQueueSize = 30;
 static std::string fromMsTsToUtcTime(std::int64_t p_msTimeStamp) {
     //Get second and fraction milliseconds: 
     std::int64_t sec = p_msTimeStamp / 1000;
