@@ -18,9 +18,7 @@ enum class ClientEvent : std::uint8_t {
     Error,
     Ready,
     Update,
-    Impression,
-    Sent,
-    Recovered
+    Impression
 };
 
 class EventHandler final
