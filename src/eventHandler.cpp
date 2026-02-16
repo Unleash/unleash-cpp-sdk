@@ -38,7 +38,6 @@ void EventHandler::stop() {
 }
 
 void EventHandler::eventLoop() {
-    _running.store(true, std::memory_order_release);
     while (_started.load(std::memory_order_acquire)) {
         std::unique_lock<std::mutex> lock(_queueMutex);
 
@@ -62,7 +61,6 @@ void EventHandler::eventLoop() {
             lock.lock();
         }
     }
-    _running.store(false, std::memory_order_release);
 }
 
 void EventHandler::onInit(InitCallback cb) {
@@ -95,19 +93,6 @@ void EventHandler::onImpression(ImpressionCallback cb) {
     std::atomic_store_explicit(&_impressionCb, ptr, std::memory_order_release);
 }
 
-void EventHandler::onSent(SentCallback cb) {
-    auto ptr = cb ? std::make_shared<SentCallback>(std::move(cb)) 
-                  : std::shared_ptr<SentCallback>{};
-    std::atomic_store_explicit(&_sentCb, ptr, std::memory_order_release);
-}
-
-void EventHandler::onRecovered(RecoveredCallback cb) {
-
-    auto ptr = cb ? std::make_shared<RecoveredCallback>(std::move(cb)) 
-                  : std::shared_ptr<RecoveredCallback>{};
-    std::atomic_store_explicit(&_recoveredCb, ptr, std::memory_order_release);
-}
-
 void EventHandler::clearAll() {
     std::atomic_store_explicit(&_initCb, std::shared_ptr<InitCallback>{}, 
                                std::memory_order_release);
@@ -118,10 +103,6 @@ void EventHandler::clearAll() {
     std::atomic_store_explicit(&_updateCb, std::shared_ptr<UpdateCallback>{}, 
                                std::memory_order_release);
     std::atomic_store_explicit(&_impressionCb, std::shared_ptr<ImpressionCallback>{}, 
-                               std::memory_order_release);
-    std::atomic_store_explicit(&_sentCb, std::shared_ptr<SentCallback>{}, 
-                               std::memory_order_release);
-    std::atomic_store_explicit(&_recoveredCb, std::shared_ptr<RecoveredCallback>{}, 
                                std::memory_order_release);
 }
 
@@ -216,44 +197,6 @@ void EventHandler::emitImpression(const std::string& flagName, bool enabled) con
             }
             
 
-        }
-        _queueCV.notify_one();
-    }
-}
-
-void EventHandler::emitSent() const {
-    if (!_started.load(std::memory_order_acquire)) {
-        return;
-    }
-    
-    auto cb = std::atomic_load_explicit(&_sentCb, std::memory_order_acquire);
-    if (cb && *cb) {
-        {
-            std::lock_guard<std::mutex> lock(_queueMutex);
-            if(_eventQueue.size() < utils::maxEventQueueSize)
-            {
-                _eventQueue.push([cb]() { (*cb)(); });
-            }
-            
-        }
-        _queueCV.notify_one();
-    }
-}
-
-void EventHandler::emitRecovered() const {
-    if (!_started.load(std::memory_order_acquire)) {
-        return;
-    }
-    
-    auto cb = std::atomic_load_explicit(&_recoveredCb, std::memory_order_acquire);
-    if (cb && *cb) {
-        {
-            std::lock_guard<std::mutex> lock(_queueMutex);
-            if(_eventQueue.size() < utils::maxEventQueueSize)
-            {
-                _eventQueue.push([cb]() { (*cb)(); });
-            }
-            
         }
         _queueCV.notify_one();
     }

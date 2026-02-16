@@ -40,35 +40,14 @@ TEST(EventHandler, DoesNothingWhenNotStarted)
     unleash::EventHandler eh;
 
     std::atomic<int> called{0};
-    eh.onSent([&] { called.fetch_add(1, std::memory_order_relaxed); });
+    eh.onReady([&] { called.fetch_add(1, std::memory_order_relaxed); });
 
     // Not started -> emit should do nothing
-    eh.emitSent();
+    eh.emitReady();
 
     // Give a little time just in case (should still not call)
     std::this_thread::sleep_for(50ms);
     EXPECT_EQ(called.load(std::memory_order_relaxed), 0);
-}
-
-TEST(EventHandler, EmitsSentCallbackWhenStarted)
-{
-    unleash::EventHandler eh;
-    eh.start();
-
-    Waiter w;
-    std::atomic<int> called{0};
-
-    eh.onSent([&] {
-        called.fetch_add(1, std::memory_order_relaxed);
-        w.signal();
-    });
-
-    eh.emitSent();
-
-    ASSERT_TRUE(w.waitFor(500ms)) << "Sent callback was not invoked in time";
-    EXPECT_EQ(called.load(std::memory_order_relaxed), 1);
-
-    eh.stop();
 }
 
 TEST(EventHandler, EmitsErrorWithPayload)
@@ -205,13 +184,10 @@ TEST(EventHandler, CallbackExceptionDoesNotKillThread)
 
     // And a second callback we can observe afterwards
     Waiter w;
-    eh.onSent([&] { w.signal(); });
+    eh.onInit([&] { w.signal(); });
 
     // Emit init (will throw inside worker thread, should be caught)
     eh.emitInit();
-
-    // Then emit sent; if worker thread survived, this must arrive
-    eh.emitSent();
 
     ASSERT_TRUE(w.waitFor(1s)) << "Worker thread likely died after exception";
 

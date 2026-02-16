@@ -36,8 +36,6 @@ public:
     using ReadyCallback      = std::function<void()>;
     using UpdateCallback     = std::function<void()>;
     using ImpressionCallback = std::function<void(const std::string& flagName, bool enabled)>;
-    using SentCallback       = std::function<void()>;
-    using RecoveredCallback  = std::function<void()>;
 
     EventHandler();
     ~EventHandler();
@@ -55,16 +53,12 @@ public:
     void onReady(ReadyCallback cb);
     void onUpdate(UpdateCallback cb);
     void onImpression(ImpressionCallback cb);
-    void onSent(SentCallback cb);
-    void onRecovered(RecoveredCallback cb);
 
     void emitInit() const;
     void emitError(const ClientError& err) const;
     void emitReady() const;
     void emitUpdate() const;
     void emitImpression(const std::string& flagName, bool enabled) const;
-    void emitSent() const;
-    void emitRecovered() const;
 
     void clearAll();
 
@@ -89,8 +83,6 @@ private:
     mutable std::shared_ptr<ReadyCallback>      _readyCb;
     mutable std::shared_ptr<UpdateCallback>     _updateCb;
     mutable std::shared_ptr<ImpressionCallback> _impressionCb;
-    mutable std::shared_ptr<SentCallback>       _sentCb;
-    mutable std::shared_ptr<RecoveredCallback>  _recoveredCb;
 };
 
 } // namespace unleash
