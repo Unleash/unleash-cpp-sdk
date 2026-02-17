@@ -21,8 +21,7 @@ namespace {
 
 static std::string kSampleFeaturesJson()
 {
-    // Typical Unleash client/features response shape.
-    // Adjust only if your JsonCodec expects something different.
+
     return R"JSON(
 {
   "version": 1,
@@ -41,8 +40,7 @@ static std::string kSampleFeaturesJson()
 
 static std::optional<std::string> getHeaderValueLowerKey(const std::string& request, const std::string& lowerKey)
 {
-    // Very simple header extraction: expects lines "Key: value".
-    // We’ll compare against lowercased header names.
+
     auto toLower = [](std::string s) {
         for (auto& c : s) c = (char)std::tolower((unsigned char)c);
         return s;
@@ -121,10 +119,6 @@ public:
     int port() const { return _port; }
     Observations& obs() { return _obs; }
 
-    // Configure behavior:
-    // - First request: 200 + ETag
-    // - Second request: if If-None-Match matches ETag -> 304, else 200
-    // - Optional: force 500 on next request
     void setForce500OnNext(bool v) { _force500Next.store(v); }
 
 private:
@@ -255,8 +249,7 @@ TEST(ToggleFetcher, Fetch200ReturnsTogglesAndCachesEtag_Then304WhenNotModified)
 {
     MiniHttpServer server;
 
-    // Build config pointing to local server.
-    // Assumption: ToggleFetcher uses config.url() as base and appends path, but server accepts any path.
+
     std::string baseUrl = "http://127.0.0.1:" + std::to_string(server.port());
     std::string baseKey = "dummy-client-key";
     std::string baseNameApp = "unitApp";
@@ -264,9 +257,7 @@ TEST(ToggleFetcher, Fetch200ReturnsTogglesAndCachesEtag_Then304WhenNotModified)
 
     unleash::ClientConfig cfg(baseUrl, baseKey, baseNameApp);
 
-    // Context ctor signature in your context.hpp:
-    // Context(appName, environment, userId, sessionId, remoteAddress, currentTime)
-    // (If your signature differs, adjust the arguments accordingly.)
+
     unleash::Context ctx("unitApp", "dev" ,"sess-1");   
     ctx.setCurrentTime()
     .setUserId("user-1")

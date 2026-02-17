@@ -95,7 +95,6 @@ TEST(JsonCodecDecodeClientFeaturesResponse, ToggleDisabledForcesDisabledVariant)
     EXPECT_TRUE(set.contains("flag-off"));
     EXPECT_FALSE(set.isEnabled("flag-off"));
 
-    // Your decoder explicitly forces disabled variant if toggle is disabled
     Variant v = set.getVariant("flag-off");
     EXPECT_EQ(v, Variant::disabledFactory());
 }
@@ -144,7 +143,6 @@ TEST(JsonCodecDecodeClientFeaturesResponse, MissingTogglesFieldReturnsEmptyToggl
 
 TEST(JsonCodecDecodeClientFeaturesResponse, DuplicateToggleNamesFirstOneWins)
 {
-    // Your ToggleSet(vector&&) documentation says: First one wins.
     const std::string jsonText = R"json(
     {
       "toggles": [
@@ -157,8 +155,8 @@ TEST(JsonCodecDecodeClientFeaturesResponse, DuplicateToggleNamesFirstOneWins)
     ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
 
     EXPECT_TRUE(set.contains("dup"));
-    EXPECT_TRUE(set.isEnabled("dup"));             // should reflect the first element
-    EXPECT_EQ(set.getVariant("dup").name(), "A");  // variant from first wins too
+    EXPECT_TRUE(set.isEnabled("dup"));             
+    EXPECT_EQ(set.getVariant("dup").name(), "A"); 
 }
 
 TEST(JsonCodecEncodeContextRequestBody, ProducesValidJsonWithContextRoot)
@@ -175,7 +173,6 @@ TEST(JsonCodecEncodeContextRequestBody, ProducesValidJsonWithContextRoot)
 
 TEST(JsonCodecEncodeContextRequestBody, WritesAppNameEnvironmentSessionIdToCorrectFields)
 {
-    //Context ctx("unleash-demo2", "24876069");
     Context ctx("unleash-demo2", std::string(),  "24876069");
     const std::string body = JsonCodec::encodeContextRequestBody(ctx);
     nlohmann::json j = nlohmann::json::parse(body);
