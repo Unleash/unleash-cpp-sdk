@@ -36,6 +36,14 @@ using seconds = std::chrono::seconds;
 using mSeconds = std::chrono::milliseconds;
 
 inline constexpr unsigned int maxEventQueueSize = 30;
+
+inline std::string keysToLowerCase(std::string p_key)
+{
+    std::transform(p_key.begin(), p_key.end(), p_key.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return p_key;
+}
+
 static std::string fromMsTsToUtcTime(std::int64_t p_msTimeStamp) {
     //Get second and fraction milliseconds: 
     std::int64_t sec = p_msTimeStamp / 1000;

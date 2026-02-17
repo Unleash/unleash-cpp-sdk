@@ -112,7 +112,7 @@ const std::optional<std::string> Context::getCurrentTime() const
 }
 
 
-const std::optional<utils::contextProperties> Context::getProperties() const 
+const utils::contextProperties Context::getProperties() const 
 {
     return _mutableContext.getProperties();
 }
