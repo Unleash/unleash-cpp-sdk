@@ -28,7 +28,11 @@ ToggleSet JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText)
 
     for (const auto& item : toggles)
     {
-        if (!item.is_object()) continue;
+        if (!item.is_object())
+        {
+            //define a logging strategy here!
+            continue;
+        }
         const json& obj = item;
 
         // ---- name ----
