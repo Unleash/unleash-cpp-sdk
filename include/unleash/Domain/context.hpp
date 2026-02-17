@@ -57,7 +57,7 @@ public:
     const std::optional<std::string> getUserId() const;
     const std::optional<std::string> getRemoteAddress() const;
     const std::optional<std::string> getCurrentTime() const;
-    const std::optional<utils::contextProperties> getProperties() const;
+    const utils::contextProperties getProperties() const;
 
     Context& setUserId(const std::string& p_userId);
     Context& setRemoteAddress(const std::string& p_remoteAddress);
