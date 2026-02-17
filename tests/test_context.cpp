@@ -105,6 +105,16 @@ TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
     EXPECT_TRUE(mCtx.getProperties().empty());
 }
 
+TEST(ContextTest, SetPropertyFromContext)
+{
+    Context ctx("myApp","developpement");
+
+    ctx.setProperty("", "x");    
+    ctx.setProperty("toto1", "1");
+    EXPECT_FALSE(ctx.getProperties().empty());
+    ASSERT_EQ(ctx.getProperties().size(), 1u);
+}
+
 TEST(ContextTest, SetCurrentTimeProperty)
 {
     Context ctx("myApp");
@@ -114,4 +124,6 @@ TEST(ContextTest, SetCurrentTimeProperty)
     ctx.updateMutableContext(mCtx);
     EXPECT_TRUE(ctx.getCurrentTime().has_value());
 }
+
+
 
