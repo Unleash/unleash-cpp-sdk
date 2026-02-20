@@ -101,7 +101,6 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
 
     json j = parsePayload(*payloadOpt);
 
-    // Root fields
     ASSERT_TRUE(j.contains("bucket"));
     ASSERT_TRUE(j.contains("appName"));
     ASSERT_TRUE(j.contains("instanceId"));
@@ -109,7 +108,6 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
     EXPECT_EQ(j["appName"], "unleash-demo2");
     EXPECT_EQ(j["instanceId"], "browser"); 
 
-    // Bucket
     const auto& b = j["bucket"];
     ASSERT_TRUE(b.is_object());
     ASSERT_TRUE(b.contains("start"));
@@ -119,14 +117,12 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
     EXPECT_TRUE(b["start"].is_string());
     EXPECT_TRUE(b["stop"].is_string());
 
-    // Toggles object
     const auto& toggles = b["toggles"];
     ASSERT_TRUE(toggles.is_object());
 
     ASSERT_TRUE(toggles.contains("test-flag"));
     ASSERT_TRUE(toggles.contains("test-flag2"));
 
-    // test-flag
     {
         const auto& t = toggles["test-flag"];
         EXPECT_EQ(t["yes"], 6);
@@ -135,7 +131,6 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
         EXPECT_EQ(t["variants"]["hello"], 6);
     }
 
-    // test-flag2
     {
         const auto& t = toggles["test-flag2"];
         EXPECT_EQ(t["yes"], 6);

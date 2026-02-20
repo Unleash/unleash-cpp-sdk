@@ -121,6 +121,47 @@ std::string JsonCodec::encodeContextRequestBody(const Context& ctx)
     return root.dump();
 
 }
+
+
+std::string JsonCodec::encodeMetricsRequestBody(const MetricList& p_metricList, 
+                                                const std::string& p_start, 
+                                                const std::string& p_end, 
+                                                const std::string& p_appName, 
+                                                const std::string& p_instanceId)
+{
+    json jBucket = nlohmann::json::object();
+    jBucket["start"] = p_start;
+    jBucket["stop"]  = p_end;
+
+    json jToggles = nlohmann::json::object();
+
+    // MetricList::getList() -> map<string, MetricToggle> (or unordered_map)
+    const auto& list = p_metricList.getList();
+    for (const auto& [toggleName, metricToggle] : list)
+    {
+        json jToggle = nlohmann::json::object();
+        jToggle["yes"] = metricToggle.getYesCount();
+        jToggle["no"]  = metricToggle.getNoCount();
+
+        json jVariants = nlohmann::json::object();
+        for (const auto& [variantName, count] : metricToggle.getVariantStats())
+        {
+            jVariants[variantName] = count;
+        }
+        jToggle["variants"] = std::move(jVariants);
+
+        jToggles[toggleName] = std::move(jToggle);
+    }
+
+    jBucket["toggles"] = std::move(jToggles);
+
+    json jRoot = nlohmann::json::object();
+    jRoot["bucket"]     = std::move(jBucket);
+    jRoot["appName"]    = p_appName;
+    jRoot["instanceId"] = p_instanceId;
+
+    return jRoot.dump();
+}
 }// namespace unleash
 
 

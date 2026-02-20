@@ -3,11 +3,13 @@
 #include "unleash/Utils/jsonCodec.hpp"
 #include "unleash/Domain/variant.hpp"
 #include "unleash/Domain/context.hpp"
+#include "unleash/Metrics/metricList.hpp"
 
 using unleash::JsonCodec;
 using unleash::ToggleSet;
 using unleash::Variant;
 using unleash::Context;
+using unleash::MetricList;
 using nlohmann::json;
 
 TEST(JsonCodecDecodeClientFeaturesResponse, ParsesValidTogglesAndVariantsWithPayload)
@@ -233,3 +235,132 @@ TEST(JsonCodecEncodeContextRequestBody, SerializesPropertiesIfPresent)
     EXPECT_EQ(c["properties"].value("plan", ""), "pro");
 }
 
+TEST(JsonCodecEncodeMetricsRequestBody, ProducesValidJsonStructureForEmptyMetricList)
+{
+    MetricList ml;
+
+    const std::string start = "2026-02-05T18:12:21.163Z";
+    const std::string stop  = "2026-02-05T18:12:51.163Z";
+    const std::string app   = "unleash-demo2";
+    const std::string inst  = "browser";
+
+    const std::string body = JsonCodec::encodeMetricsRequestBody(ml, start, stop, app, inst);
+
+    json j = json::parse(body);
+
+    ASSERT_TRUE(j.contains("bucket"));
+    ASSERT_TRUE(j["bucket"].is_object());
+    EXPECT_EQ(j["bucket"]["start"], start);
+    EXPECT_EQ(j["bucket"]["stop"],  stop);
+
+    ASSERT_TRUE(j["bucket"].contains("toggles"));
+    EXPECT_TRUE(j["bucket"]["toggles"].is_object());
+    EXPECT_TRUE(j["bucket"]["toggles"].empty());
+
+    EXPECT_EQ(j["appName"], app);
+    EXPECT_EQ(j["instanceId"], inst);
+}
+
+TEST(JsonCodecEncodeMetricsRequestBody, EncodesTogglesYesNoAndVariantsCorrectly)
+{
+    MetricList ml;
+
+    for (int i = 0; i < 6; ++i) {
+        ml.addVariantMetricData("test-flag", true,  "hello");
+        ml.addVariantMetricData("test-flag2", true, "hello");
+    }
+
+    const std::string start = "2026-02-05T18:12:21.163Z";
+    const std::string stop  = "2026-02-05T18:12:51.163Z";
+    const std::string app   = "unleash-demo2";
+    const std::string inst  = "browser";
+
+    const std::string body = JsonCodec::encodeMetricsRequestBody(ml, start, stop, app, inst);
+    json actual = json::parse(body);
+
+    json expected = json::object();
+    expected["bucket"] = json::object();
+    expected["bucket"]["start"] = start;
+    expected["bucket"]["stop"]  = stop;
+
+    expected["bucket"]["toggles"] = json::object();
+
+    expected["bucket"]["toggles"]["test-flag"] = json::object();
+    expected["bucket"]["toggles"]["test-flag"]["yes"] = 6;
+    expected["bucket"]["toggles"]["test-flag"]["no"]  = 0;
+    expected["bucket"]["toggles"]["test-flag"]["variants"] = json::object();
+    expected["bucket"]["toggles"]["test-flag"]["variants"]["hello"] = 6;
+
+    expected["bucket"]["toggles"]["test-flag2"] = json::object();
+    expected["bucket"]["toggles"]["test-flag2"]["yes"] = 6;
+    expected["bucket"]["toggles"]["test-flag2"]["no"]  = 0;
+    expected["bucket"]["toggles"]["test-flag2"]["variants"] = json::object();
+    expected["bucket"]["toggles"]["test-flag2"]["variants"]["hello"] = 6;
+
+    expected["appName"]    = app;
+    expected["instanceId"] = inst;
+
+    EXPECT_EQ(actual, expected);
+}
+
+TEST(JsonCodecEncodeMetricsRequestBody, HandlesMixedYesNoAndMultipleVariants)
+{
+    MetricList ml;
+
+
+    ml.addVariantMetricData("flagA", true, "hello");
+    ml.addVariantMetricData("flagA", true, "hello");
+    ml.addVariantMetricData("flagA", false, "hello");
+    ml.addVariantMetricData("flagA", false, "world");
+    ml.addVariantMetricData("flagA", false, "world");
+
+    const std::string start = "2026-02-05T18:12:21.163Z";
+    const std::string stop  = "2026-02-05T18:12:51.163Z";
+
+    const std::string body = JsonCodec::encodeMetricsRequestBody(ml, start, stop, "app", "inst");
+    json j = json::parse(body);
+
+    ASSERT_TRUE(j.contains("bucket"));
+    ASSERT_TRUE(j["bucket"].contains("toggles"));
+    ASSERT_TRUE(j["bucket"]["toggles"].contains("flagA"));
+
+    const auto& flagA = j["bucket"]["toggles"]["flagA"];
+    EXPECT_EQ(flagA["yes"], 2);
+    EXPECT_EQ(flagA["no"],  3);
+
+    ASSERT_TRUE(flagA.contains("variants"));
+    EXPECT_EQ(flagA["variants"]["hello"], 3);
+    EXPECT_EQ(flagA["variants"]["world"], 2);
+}
+
+TEST(JsonCodecEncodeMetricsRequestBody, HandlesMixedYesNoWithNoVariants)
+{
+    MetricList ml;
+
+    ml.addEnableMetricData("noVariantFlag", true);
+    ml.addEnableMetricData("noVariantFlag", true);
+    ml.addEnableMetricData("noVariantFlag", false);
+    ml.addEnableMetricData("noVariantFlag", false);
+    ml.addEnableMetricData("noVariantFlag", false);
+
+    const std::string body = JsonCodec::encodeMetricsRequestBody(
+        ml,
+        "2026-02-05T18:12:21.163Z",
+        "2026-02-05T18:12:51.163Z",
+        "app",
+        "inst");
+
+    json j = json::parse(body);
+
+    ASSERT_TRUE(j.contains("bucket"));
+    ASSERT_TRUE(j["bucket"].contains("toggles"));
+    ASSERT_TRUE(j["bucket"]["toggles"].contains("noVariantFlag"));
+
+    const auto& flag = j["bucket"]["toggles"]["noVariantFlag"];
+    EXPECT_EQ(flag["yes"], 2);
+    EXPECT_EQ(flag["no"], 3);
+
+    ASSERT_TRUE(flag.contains("variants"));
+    EXPECT_TRUE(flag["variants"].is_object());
+    EXPECT_TRUE(flag["variants"].empty());
+}
