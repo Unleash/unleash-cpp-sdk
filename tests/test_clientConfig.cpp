@@ -44,7 +44,6 @@ TEST(ClientConfig, DefaultRefreshAndMetricsMatchExpectedBehavior)
     
     ClientConfig cfg(url, key, appName);
 
-    // Defaults from your header:
     EXPECT_EQ(cfg.refreshInterval().count(), 0);
     EXPECT_FALSE(cfg.isRefreshEnabled());
 
@@ -129,7 +128,7 @@ TEST(ClientConfig, BootstrapOptionalAbsentByDefault)
     ClientConfig cfg(url, key, appName);
 
     EXPECT_FALSE(cfg.bootstrap().has_value());
-    EXPECT_TRUE(cfg.bootstrapOverride()); // default true in your header
+    EXPECT_TRUE(cfg.bootstrapOverride()); 
 }
 
 TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor)
@@ -150,7 +149,6 @@ TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor)
     const auto& ref = cfg.bootstrap()->getToggles();
     ASSERT_EQ(ref.size(), 2u);
 
-    // This should NOT empty Bootstrap map because ToggleSet takes Map by value (copy-then-move).
     ToggleSet snapshot(ref);
 
     EXPECT_EQ(cfg.bootstrap()->getToggles().size(), 2u);

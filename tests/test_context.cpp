@@ -85,7 +85,6 @@ TEST(ContextTest, SetPropertyAddsAndUpdates)
     EXPECT_EQ(mCtx.getProperties()[0].first, "tenant");
     EXPECT_EQ(mCtx.getProperties()[0].second, "acme");
 
-    // Update existing key
     mCtx.setProperty("tenant", "acme2");
     ASSERT_EQ(mCtx.getProperties().size(), 1u);
     EXPECT_EQ(mCtx.getProperties()[0].second, "acme2");
@@ -98,7 +97,6 @@ TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
     mCtx.setProperty("", "x");
     EXPECT_TRUE(mCtx.getProperties().empty());
 
-    // reserved keys should be ignored by your current implementation
     mCtx.setProperty("userId", "x");
     mCtx.setProperty("appName", "x");
     mCtx.setProperty("currentTime", "x");

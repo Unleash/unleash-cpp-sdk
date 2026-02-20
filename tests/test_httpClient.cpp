@@ -23,7 +23,6 @@ using namespace unleash;
 // - GET /etag   : returns 200 with ETag unless If-None-Match matches, then 304
 // - POST /post  : returns 200 and echoes request body
 //
-// Note: This is a minimal server for tests, not production HTTP parsing.
 
 #ifdef _WIN32
   #define NOMINMAX
@@ -101,7 +100,6 @@ static ParsedRequest parseHttpRequest(const std::string& raw) {
         r.headers[toLower(k)] = v;
     }
 
-    // Whatever remains in stream is body (may be empty)
     std::ostringstream body;
     body << iss.rdbuf();
     r.body = body.str();
@@ -148,7 +146,7 @@ public:
         sockaddr_in addr{};
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        addr.sin_port = htons(0); // ephemeral port
+        addr.sin_port = htons(0); 
 
         if (::bind(_listenSock, (sockaddr*)&addr, sizeof(addr)) != 0) {
             closesock(_listenSock);
@@ -174,7 +172,6 @@ public:
     ~TinyHttpServer()
     {
         _running.store(false);
-        // connect to wake accept
         tryWake();
 
         if (_thread.joinable()) _thread.join();
@@ -183,7 +180,6 @@ public:
 
     int port() const { return _port; }
 
-    // For verifying POST body
     std::optional<std::string> lastPostBody() const {
         std::lock_guard<std::mutex> g(_mtx);
         return _lastPostBody;
@@ -209,12 +205,10 @@ private:
             SOCKET c = ::accept(_listenSock, (sockaddr*)&client, &clen);
             if (!socket_valid(c)) continue;
 
-            // read request (simple)
             std::string raw;
             raw.reserve(4096);
             char buf[2048];
 
-            // Read until we have headers
             while (true) {
 #ifdef _WIN32
                 int n = ::recv(c, buf, (int)sizeof(buf), 0);
@@ -226,7 +220,6 @@ private:
                 if (raw.find("\r\n\r\n") != std::string::npos) break;
             }
 
-            // Determine if body is expected
             ParsedRequest req = parseHttpRequest(raw);
             auto itCL = req.headers.find("content-length");
             size_t wantBody = 0;
@@ -234,7 +227,6 @@ private:
                 wantBody = static_cast<size_t>(std::stoul(itCL->second));
             }
 
-            // If body not fully read yet, read remaining
             auto headerEnd = raw.find("\r\n\r\n");
             std::string alreadyBody;
             if (headerEnd != std::string::npos) {
@@ -251,7 +243,6 @@ private:
             }
             if (wantBody > 0) req.body = alreadyBody.substr(0, wantBody);
 
-            // Route
             const std::string etag = R"(W/"abc")";
 
             if (req.method == "GET" && req.path == "/etag") {
@@ -311,7 +302,6 @@ TEST(HttpClient, ReturnsTypeMismatchForNonHttpRequest)
 
     ASSERT_NE(resp, nullptr);
 
-    // Should be ErrorResponse
     auto* err = dynamic_cast<ErrorResponse*>(resp.get());
     ASSERT_NE(err, nullptr);
     EXPECT_EQ(err->code(), ComErrorEnum::TypeMismatch);
@@ -350,7 +340,6 @@ TEST(HttpClient, Get304WhenIfNoneMatchMatchesETag)
 
     unleash::HttpClient client;
 
-    // First call to get ETag
     unleash::HttpRequest req1;
     req1.url = "http://127.0.0.1:" + std::to_string(server.port()) + "/etag";
     req1.timeoutMs = 3000;
@@ -364,7 +353,6 @@ TEST(HttpClient, Get304WhenIfNoneMatchMatchesETag)
     ASSERT_NE(it, resp1->headers.end());
     const std::string etag = it->second;
 
-    // Second call with If-None-Match => expect 304
     unleash::HttpRequest req2;
     req2.url = req1.url;
     req2.timeoutMs = 3000;
