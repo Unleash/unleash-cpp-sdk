@@ -26,7 +26,6 @@ TEST(ToggleSetTest, DefaultConstructedIsEmpty)
 
     EXPECT_FALSE(set.contains("missing"));
 
-    // Missing toggle -> safe defaults
     EXPECT_FALSE(set.isEnabled("missing"));
     EXPECT_EQ(set.getVariant("missing"), Variant::disabledFactory());
     EXPECT_FALSE(set.impressionData("missing"));
