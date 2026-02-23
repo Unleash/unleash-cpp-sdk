@@ -2,7 +2,7 @@ from conan import ConanFile
 
 class UnleashSdkConan(ConanFile):
     name = "unleash_sdk"
-    version = "1.0.0"
+    version = "0.1.0"
     settings = "os", "arch", "compiler", "build_type"
     generators = "CMakeDeps", "CMakeToolchain"
 
