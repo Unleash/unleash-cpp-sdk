@@ -9,6 +9,9 @@ compile_commands.json
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/tasks.json
+#Conan generated files: 
+CMakeUserPresets.json
+.venv/*
 
 *~
 *.swp
