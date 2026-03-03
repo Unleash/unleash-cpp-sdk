@@ -5,11 +5,12 @@
 #include <utility>
 #include <chrono>
 #include <map>
-
+#include <memory>
 
 #include "unleash/Domain/context.hpp"
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Utils/utils.hpp"
+#include "unleash/Store/storageProvider.hpp"
 
 
 
@@ -42,7 +43,8 @@ public:
     ClientConfig& setImpressionDataAll(bool v);
     ClientConfig& setUsePostRequests(bool v);
     ClientConfig& setTimeOutQuery(utils::mSeconds m);
-    //ClientConfig& setTogglesStorageTTL(utils::seconds ttl);
+
+    ClientConfig& setStorageProvider(std::shared_ptr<IStorageProvider> provider);
 
 
     //getters: 
@@ -64,6 +66,11 @@ public:
 
     bool isRefreshEnabled() const;
     bool isMetricsEnabled() const;
+
+    std::shared_ptr<IStorageProvider> storageProvider() const;
+
+
+
     
 
     bool isValid();
@@ -85,6 +92,8 @@ private:
     bool _usePostRequests{false};
     std::string _instanceId = std::string(utils::defaultInstanceId);
     utils::mSeconds _timeOutQueryMS{5};
+    //StorageProvider: 
+    std::shared_ptr<IStorageProvider> _storageProvider;
 
     
 };

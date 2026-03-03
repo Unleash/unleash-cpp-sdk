@@ -81,21 +81,35 @@ TEST(EventHandler, EmitsImpressionWithPayload)
     eh.start();
 
     Waiter w;
+    std::string contextName = "";
     std::string flag;
     bool enabled = false;
+    std::string eventType;
+    bool impression;
+    std::string variantName;
 
-    eh.onImpression([&](const std::string& flagName, bool isEnabled) {
-        flag = flagName;
-        enabled = isEnabled;
+    
+    eh.onImpression([&](const unleash::EventHandler::ClientImpression& impressionEvent) {
+        contextName = impressionEvent.ctx.getAppName();
+        flag = impressionEvent.flagName;
+        enabled = impressionEvent.enabled;
+        eventType = impressionEvent.eventType;
+        impression = impressionEvent.impressionData;
+        variantName = impressionEvent.variant;
         w.signal();
     });
 
-    eh.emitImpression("myFlag", true);
+    unleash::EventHandler::ClientImpression event{unleash::Context{"myTestApp"}, "myFlag", true, "getVariant", false, "variant1"};
+    eh.emitImpression(event);
 
     ASSERT_TRUE(w.waitFor(500ms)) << "Impression callback was not invoked in time";
+    EXPECT_EQ(contextName, "myTestApp");
     EXPECT_EQ(flag, "myFlag");
     EXPECT_TRUE(enabled);
-
+    EXPECT_EQ(eventType, "getVariant");
+    EXPECT_FALSE(impression);
+    EXPECT_EQ(variantName, "variant1");
+    
     eh.stop();
 }
 

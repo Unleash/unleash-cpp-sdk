@@ -182,7 +182,7 @@ void EventHandler::emitUpdate() const {
     }
 }
 
-void EventHandler::emitImpression(const std::string& flagName, bool enabled) const {
+void EventHandler::emitImpression(const ClientImpression& event) const {
     if (!_started.load(std::memory_order_acquire)) {
         return;
     }
@@ -193,7 +193,7 @@ void EventHandler::emitImpression(const std::string& flagName, bool enabled) con
             std::lock_guard<std::mutex> lock(_queueMutex);
             if(_eventQueue.size() < utils::maxEventQueueSize)
             {
-                _eventQueue.push([cb, flagName, enabled]() { (*cb)(flagName, enabled); });
+                _eventQueue.push([cb, event]() { (*cb)(event); });
             }
             
 

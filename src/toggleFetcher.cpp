@@ -1,7 +1,6 @@
 #include "unleash/Fetcher/toggleFetcher.hpp"
 #include "unleash/Utils/utils.hpp"
 #include "unleash/Utils/jsonCodec.hpp"
-
 #include <cctype>
 
 

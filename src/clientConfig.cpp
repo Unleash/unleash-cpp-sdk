@@ -25,6 +25,7 @@ ClientConfig::ClientConfig(const std::string& p_url, const std::string& p_client
         _appName = std::string(utils::defaultAppName);
     }
     _connectionId = utils::uuidv4Generator();
+    _storageProvider = std::make_shared<LocalStorageProvider>();
 }
 
 ClientConfig& ClientConfig::setInstanceId(const std::string& p_instanceId)
@@ -90,6 +91,15 @@ ClientConfig& ClientConfig::setUsePostRequests(bool v)
 ClientConfig& ClientConfig::setTimeOutQuery(utils::mSeconds m)
 {
     _timeOutQueryMS = m;
+    return *this;
+}
+
+ClientConfig& ClientConfig::setStorageProvider(std::shared_ptr<IStorageProvider> provider)
+{
+    if(provider)
+    {
+       _storageProvider = std::move(provider);
+    }
     return *this;
 }
 
@@ -176,6 +186,12 @@ bool ClientConfig::isMetricsEnabled() const
 {
     return (_metricsInterval.count() > 0);
 }
+
+std::shared_ptr<IStorageProvider> ClientConfig::storageProvider() const
+{
+    return _storageProvider;
+}
+
 
 bool ClientConfig::isValid()
 {

@@ -10,6 +10,8 @@
 #include <condition_variable>
 #include <atomic>
 
+#include "unleash/Domain/context.hpp"
+
 namespace unleash 
 {
     
@@ -28,12 +30,20 @@ public:
         std::string message;
         std::string details;
     };
+    struct ClientImpression final {
+        Context ctx;
+        std::string flagName;
+        bool enabled;
+        std::string eventType;
+        bool impressionData;
+        std::string variant = "";
+    };
 
     using InitCallback       = std::function<void()>;
     using ErrorCallback      = std::function<void(const ClientError&)>;
     using ReadyCallback      = std::function<void()>;
     using UpdateCallback     = std::function<void()>;
-    using ImpressionCallback = std::function<void(const std::string& flagName, bool enabled)>;
+    using ImpressionCallback = std::function<void(const ClientImpression&)>;
 
     EventHandler();
     ~EventHandler();
@@ -56,7 +66,7 @@ public:
     void emitError(const ClientError& err) const;
     void emitReady() const;
     void emitUpdate() const;
-    void emitImpression(const std::string& flagName, bool enabled) const;
+    void emitImpression(const ClientImpression& event) const;
 
     void clearAll();
 
