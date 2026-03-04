@@ -142,8 +142,8 @@ TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor)
     ToggleSet::Map m;
     m.emplace("flagA", Toggle("flagA", true, false, Variant::disabledFactory()));
     m.emplace("flagB", Toggle("flagB", false, false, Variant::disabledFactory()));
-
-    cfg.setBootstrap(Bootstrap(std::move(m)));
+    Bootstrap b(std::move(m));
+    cfg.setBootstrap(b);
 
     ASSERT_TRUE(cfg.bootstrap().has_value());
     const auto& ref = cfg.bootstrap()->getToggles();
@@ -183,4 +183,33 @@ TEST(ClientConfig, ValidateAcceptsDefaultCorrectConfig)
     
     ClientConfig cfg(url, key, appName);
     EXPECT_TRUE(cfg.isValid());
+}
+
+TEST(ClientConfig, StorageProvider_DefaultIsNonNullAndLocalStorageProvider)
+{
+    ClientConfig cfg("http://example", "key123", "cppApp");
+
+    auto sp = cfg.storageProvider();
+    ASSERT_NE(sp, nullptr);
+
+    // The constructor is expected to set a LocalStorageProvider by default.
+    auto local = std::dynamic_pointer_cast<LocalStorageProvider>(sp);
+    EXPECT_NE(local, nullptr);
+}
+
+TEST(ClientConfig, StorageProvider_SetterReplacesProviderAndIgnoresNull)
+{
+    ClientConfig cfg("http://example", "key123", "cppApp");
+
+    auto initial = cfg.storageProvider();
+    ASSERT_NE(initial, nullptr);
+
+    auto replacement = std::make_shared<LocalStorageProvider>();
+    cfg.setStorageProvider(replacement);
+    EXPECT_EQ(cfg.storageProvider(), replacement);
+    EXPECT_NE(cfg.storageProvider(), initial);
+
+    // Null should not overwrite a valid provider.
+    cfg.setStorageProvider(nullptr);
+    EXPECT_EQ(cfg.storageProvider(), replacement);
 }

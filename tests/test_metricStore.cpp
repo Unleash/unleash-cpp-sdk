@@ -152,7 +152,7 @@ TEST(MetricsStoreTest, ThreadSafety_ManyThreadsUpdatingTotalsAreCorrect)
     threads.reserve(kThreads);
 
     for (int t = 0; t < kThreads; ++t) {
-        threads.emplace_back([&store, t] {
+        threads.emplace_back([&store, &kIters , t] {
             for (int i = 0; i < kIters; ++i) {
                 const bool yes = ((i + t) % 2) == 0;
                 if ((i % 2) == 0)

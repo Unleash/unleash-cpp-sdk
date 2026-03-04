@@ -1,3 +1,4 @@
+#pragma once 
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Configuration/clientConfig.hpp"
 #include "unleash/Transport/httpClient.hpp"

@@ -64,27 +64,49 @@ TEST(FlagStore, ConcurrentReadersDoNotCrashDuringReplace)
 {
     FlagStore store;
 
+    constexpr int kReaders = 8;
+
+    std::atomic_bool go{false};
     std::atomic_bool stop{false};
+    std::atomic_int started{0};
     std::atomic_int reads{0};
 
     std::vector<std::thread> threads;
-    constexpr int kReaders = 8;
     threads.reserve(kReaders);
 
     for (int i = 0; i < kReaders; ++i) {
         threads.emplace_back([&]() {
+            started.fetch_add(1, std::memory_order_release);
+
+            // Wait until main thread releases all readers at once
+            while (!go.load(std::memory_order_acquire)) {
+                std::this_thread::yield();
+            }
+
             while (!stop.load(std::memory_order_relaxed)) {
                 auto s = store.snapshot();
-                if (s) {
-                    reads.fetch_add(1, std::memory_order_relaxed);
-                }
+                if (s) reads.fetch_add(1, std::memory_order_relaxed);
             }
         });
     }
 
-    for (int i = 0; i < 2000; ++i) {
-        store.replace(std::make_shared<const ToggleSet>());
+    // Wait until all readers are actually running
+    while (started.load(std::memory_order_acquire) < kReaders) {
+        std::this_thread::yield();
     }
+
+    // Start the race
+    go.store(true, std::memory_order_release);
+
+    // Replace concurrently for a short window
+    std::thread writer([&]() {
+        for (int i = 0; i < 5000; ++i) {
+            store.replace(std::make_shared<const ToggleSet>());
+            if ((i % 50) == 0) std::this_thread::yield();
+        }
+    });
+
+    writer.join();
 
     stop.store(true, std::memory_order_relaxed);
     for (auto& t : threads) t.join();
