@@ -171,7 +171,6 @@ void UnleashClient::featurePollingLoop()
 
         if (_exitThreads.load(std::memory_order_acquire))
             break;
-        _mutexPolling.unlock();
         singleFetchToggles(snapshot);
     }
 }
