@@ -261,29 +261,41 @@ To persist flags across restarts, provide your own implementation via `ClientCon
 
 ### Requirements:
 - C++17 compiler
+- python3 (necessary for venv and conan install) 
 - CMake >= 3.16
 - `nlohmann_json`
 - `libcurl`
 - `GTest` (if building tests)
 
 ### Build:
+1. Create and activate a Python virtual environment for Conan:
 
-1. Ensure Conan profile exists :
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+    ```
+2. Install Conan inside .venv:
+
+   ```bash
+   python -m pip install --upgrade pip
+   python -m pip install conan
+    ```
+3. Ensure Conan profile exists :
 
     ```bash
     conan profile detect --force
     ``` 
-2. Install dependencies with into build/release :
+4. Install dependencies with into build/release :
 
     ```bash
     conan install . -of=build/release -s build_type=Release --build=missing
     ``` 
-3. Configure CMake using Conan toolchain: 
+5. Configure CMake using Conan toolchain: 
 
     ```bash
     cmake -S . -B build/release -G Ninja -DCMAKE_TOOLCHAIN_FILE=build/release/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DUNLEASH_BUILD_TESTS=ON
     ``` 
-4. Build the sdk: 
+6. Build the sdk: 
     ```bash
     cmake --build build/release -j8 #You can adapt option -j8 to fit your machine (you can check number of thread on you machine using 'echo $(nproc)'
                                     #or build directly using: ' cmake --build build/release -j"$(nproc)" ')
