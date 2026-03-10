@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <mutex>
 #include <vector>
 #include <iostream>
 #include <limits>
@@ -156,6 +157,7 @@ public:
     struct Observations {
         std::atomic<int>  requests{ 0 };
         std::atomic<bool> sawIfNoneMatchOnSecond{ false };
+        std::string       lastRequestLine;
     };
 
     MiniHttpServer()
@@ -209,6 +211,11 @@ public:
 
     int          port() const { return _port; }
     Observations& obs()       { return _obs;  }
+    std::string lastRequestLine() const
+    {
+        std::lock_guard<std::mutex> lk(_obsMutex);
+        return _obs.lastRequestLine;
+    }
 
     void setForce500OnNext(bool v) { _force500Next.store(v); }
 
@@ -227,7 +234,7 @@ private:
 
             timeval tv{};
             tv.tv_sec  = 0;
-            tv.tv_usec = 100'000; 
+            tv.tv_usec = 100'000;
 
 #ifdef _WIN32
             // First argument is ignored on Windows.
@@ -236,7 +243,7 @@ private:
             const int ret = ::select(listenFd + 1, &rfds, nullptr, nullptr, &tv);
 #endif
             if (ret <= 0) {
-                // ret == 0 
+                // ret == 0
                 // ret == -1
                 continue;
             }
@@ -254,6 +261,14 @@ private:
 
             std::string req    = readRequest(cfd);
             const int   idx    = ++_obs.requests;
+            {
+                std::lock_guard<std::mutex> lk(_obsMutex);
+                std::istringstream iss(req);
+                std::getline(iss, _obs.lastRequestLine);
+                if (!_obs.lastRequestLine.empty() && _obs.lastRequestLine.back() == '\r') {
+                    _obs.lastRequestLine.pop_back();
+                }
+            }
 
             if (_force500Next.exchange(false)) {
                 sendResponse(cfd, 500, "Internal Server Error",
@@ -382,6 +397,7 @@ private:
     std::atomic<bool>    _stop{ false };
     std::atomic<bool>    _force500Next{ false };
     Observations         _obs{};
+    mutable std::mutex   _obsMutex;
 
 #ifdef _WIN32
     std::optional<WsaGuard> _wsa{};
@@ -454,4 +470,35 @@ TEST(ToggleFetcher, Fetch500ReturnsError)
     if (r.error.has_value()) {
         EXPECT_FALSE(r.error->empty());
     }
+}
+
+TEST(ToggleFetcher, GetRequestIncludesContextAsQueryParams)
+{
+    MiniHttpServer server;
+
+    const std::string baseUrl = "http://127.0.0.1:" + std::to_string(server.port());
+    unleash::ClientConfig cfg(baseUrl, "dummy-client-key", "unitApp");
+    cfg.setUsePostRequests(false);
+
+    unleash::Context ctx("unitApp", "dev", "sess-1");
+    ctx.setUserId("user-1")
+       .setRemoteAddress("10.0.0.1")
+       .setProperty("tenant", "acme")
+       .setProperty("plan", "pro")
+       .setProperty("note", "hello world");
+
+    unleash::ToggleFetcher fetcher(cfg);
+    auto r = fetcher.fetch(ctx);
+    EXPECT_EQ(r.status, 200);
+
+    const std::string line = server.lastRequestLine();
+    EXPECT_NE(line.find("GET /?"), std::string::npos);
+    EXPECT_NE(line.find("appName=unitApp"), std::string::npos);
+    EXPECT_NE(line.find("environment=dev"), std::string::npos);
+    EXPECT_NE(line.find("sessionId=sess-1"), std::string::npos);
+    EXPECT_NE(line.find("userId=user-1"), std::string::npos);
+    EXPECT_NE(line.find("remoteAddress=10.0.0.1"), std::string::npos);
+    EXPECT_NE(line.find("properties.tenant=acme"), std::string::npos);
+    EXPECT_NE(line.find("properties.plan=pro"), std::string::npos);
+    EXPECT_NE(line.find("properties.note=hello%20world"), std::string::npos);
 }
