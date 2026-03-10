@@ -2,6 +2,8 @@
 #include "unleash/Utils/utils.hpp"
 #include "unleash/Utils/jsonCodec.hpp"
 #include <cctype>
+#include <sstream>
+#include <iomanip>
 
 namespace unleash {
 
@@ -10,7 +12,8 @@ ToggleFetcher::ToggleFetcher(const ClientConfig& p_config) {
 }
 
 void ToggleFetcher::makeFrontendRequest(const ClientConfig& p_config) {
-    _httpRequest.url = p_config.url();
+    _baseUrl = p_config.url();
+    _httpRequest.url = _baseUrl;
     _httpRequest.usePOSTrequests = p_config.usePostRequests();
     _httpRequest.timeoutMs = static_cast<long>(p_config.timeOutQuery().count());
     // Fill headers similar to JS parseHeaders
@@ -38,8 +41,73 @@ void ToggleFetcher::makeFrontendRequest(const ClientConfig& p_config) {
     }
 }
 
+namespace {
+
+std::string urlEncodeContext(std::string_view value) {
+    std::string out;
+    out.reserve(value.size() * 3);
+
+    static constexpr char hex[] = "0123456789ABCDEF";
+
+    for (unsigned char c : value) {
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_' ||
+            c == '.' || c == '~') {
+            out.push_back(static_cast<char>(c));
+        } else {
+            out.push_back('%');
+            out.push_back(hex[c >> 4]);
+            out.push_back(hex[c & 0x0F]);
+        }
+    }
+
+    return out;
+}
+
+std::string buildContextQuery(const Context& ctx) {
+    std::string query;
+    query.reserve(256);
+
+    auto add = [&](const std::string& k, const std::string& v) {
+        if (v.empty())
+            return;
+        const char sep = query.empty() ? '?' : '&';
+        query.push_back(sep);
+        query.append(urlEncodeContext(k));
+        query.push_back('=');
+        query.append(urlEncodeContext(v));
+    };
+
+    add("appName", ctx.getAppName());
+    add("sessionId", ctx.getSessionId());
+    if (ctx.getEnvironment())
+        add("environment", *ctx.getEnvironment());
+    if (ctx.getUserId())
+        add("userId", *ctx.getUserId());
+    if (ctx.getRemoteAddress())
+        add("remoteAddress", *ctx.getRemoteAddress());
+    if (ctx.getCurrentTime())
+        add("currentTime", *ctx.getCurrentTime());
+
+    for (const auto& [k, v] : ctx.getProperties()) {
+        if (k.empty() || v.empty())
+            continue;
+        // Encode custom properties using properties.<key>
+        add("properties." + k, v);
+    }
+
+    return query;
+}
+
+} // namespace
+
 ToggleFetcher::FetchResult ToggleFetcher::fetch(const Context& p_ctx) {
-    _httpRequest.body = JsonCodec::encodeContextRequestBody(p_ctx);
+    if (_httpRequest.usePOSTrequests) {
+        _httpRequest.body = JsonCodec::encodeContextRequestBody(p_ctx);
+    } else {
+        _httpRequest.body.clear();
+        _httpRequest.url = _baseUrl;
+        _httpRequest.url += buildContextQuery(p_ctx);
+    }
     auto resp = _httpClient.request(_httpRequest);
     FetchResult result;
 

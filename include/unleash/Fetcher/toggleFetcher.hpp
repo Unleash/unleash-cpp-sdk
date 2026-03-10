@@ -31,6 +31,7 @@ class ToggleFetcher {
 
     HttpClient _httpClient;
     HttpRequest _httpRequest;
+    std::string _baseUrl;
     std::string _etag;
 };
 
