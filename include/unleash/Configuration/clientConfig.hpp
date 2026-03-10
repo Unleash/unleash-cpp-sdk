@@ -72,8 +72,8 @@ class ClientConfig final {
     std::string _appName;
     std::string _connectionId;
 
-    utils::seconds _refreshInterval{0};
-    utils::seconds _metricsInterval{0};
+    utils::seconds _refreshInterval{15};
+    utils::seconds _metricsInterval{60};
     utils::seconds _metricsIntervalInitial{0};
     std::optional<Bootstrap> _bootstrap{};
     bool _bootstrapOverride{true};
@@ -82,7 +82,7 @@ class ClientConfig final {
     bool _impressionDataAll{false};
     bool _usePostRequests{false};
     std::string _instanceId = std::string(utils::defaultInstanceId);
-    utils::mSeconds _timeOutQueryMS{5};
+    utils::mSeconds _timeOutQueryMS{5000};
     // StorageProvider:
     std::shared_ptr<IStorageProvider> _storageProvider;
 };
