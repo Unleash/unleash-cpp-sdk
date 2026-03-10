@@ -483,7 +483,7 @@ TEST(ToggleFetcher, GetRequestIncludesContextAsQueryParams)
     unleash::Context ctx("unitApp", "dev", "sess-1");
     ctx.setUserId("user-1")
        .setRemoteAddress("10.0.0.1")
-       .setProperty("tenant", "acme")
+       .setProperty("tenant", "acmé")
        .setProperty("plan", "pro")
        .setProperty("note", "hello world");
 
