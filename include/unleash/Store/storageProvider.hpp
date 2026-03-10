@@ -1,30 +1,27 @@
 #pragma once
 #include "unleash/Domain/toggleSet.hpp"
 
-
-
-namespace unleash 
-{
+namespace unleash {
 
 class IStorageProvider {
-public: 
+  public:
     virtual ~IStorageProvider() = default;
     virtual const std::optional<ToggleSet> get() = 0;
     virtual void save(const ToggleSet& t) = 0;
 };
 
 class LocalStorageProvider final : public IStorageProvider {
-public:
+  public:
     const std::optional<ToggleSet> get() override {
         return empty_;
     }
 
     void save(const ToggleSet&) override {
-        // Nothing will happen! 
+        // Nothing will happen!
     }
 
-private:
+  private:
     std::optional<ToggleSet> empty_{};
 };
 
-}// namespace unleash
+} // namespace unleash

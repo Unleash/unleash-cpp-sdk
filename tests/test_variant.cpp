@@ -3,36 +3,30 @@
 
 using unleash::Variant;
 
-
-TEST(VariantTest, DefaultConstructedIsDisabledEmptyName)
-{
+TEST(VariantTest, DefaultConstructedIsDisabledEmptyName) {
     Variant v;
     EXPECT_FALSE(v.enabled());
     EXPECT_TRUE(v.name().empty());
     EXPECT_FALSE(v.hasPayload());
 }
 
-TEST(VariantTest, DisabledFactoryIsConsistent)
-{
+TEST(VariantTest, DisabledFactoryIsConsistent) {
     Variant v = Variant::disabledFactory();
     EXPECT_EQ(v.name(), "disabled");
     EXPECT_FALSE(v.enabled());
     EXPECT_FALSE(v.hasPayload());
 }
 
-TEST(VariantTest, SetPayloadValueIsCorrect)
-{
+TEST(VariantTest, SetPayloadValueIsCorrect) {
     Variant a("Test", true, Variant::Payload{"string", "x"});
 
     const std::optional<Variant::Payload> p = a.payload();
     EXPECT_TRUE(p.has_value());
     EXPECT_EQ(p.value().type(), "string");
     EXPECT_EQ(p.value().value(), "x");
-    
 }
 
-TEST(VariantTest, Equality)
-{
+TEST(VariantTest, Equality) {
     Variant a("A", true, Variant::Payload{"string", "x"});
     Variant b("A", true, Variant::Payload{"string", "x"});
     Variant c("A", true, Variant::Payload{"string", "y"});

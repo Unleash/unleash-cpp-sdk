@@ -5,41 +5,33 @@
 using unleash::Context;
 using unleash::MutableContext;
 
-TEST(ContextTest, ConstructorSetsRequiredFields)
-{
-    Context ctx("myApp", "environment",  "123568941");
+TEST(ContextTest, ConstructorSetsRequiredFields) {
+    Context ctx("myApp", "environment", "123568941");
     EXPECT_EQ(ctx.getAppName(), "myApp");
     EXPECT_EQ(ctx.getEnvironment(), "environment");
     EXPECT_EQ(ctx.getSessionId(), "123568941");
 }
 
-TEST(ContextTest, ConstructorSetNoField)
-{
+TEST(ContextTest, ConstructorSetNoField) {
     Context ctx{};
     EXPECT_EQ(ctx.getAppName(), std::string(utils::defaultAppName));
     EXPECT_FALSE(ctx.getEnvironment().has_value());
     EXPECT_FALSE(ctx.getSessionId().empty());
-    
 }
 
-
-
-TEST(ContextTest, OptionalFieldsAreEmptyByDefault)
-{
+TEST(ContextTest, OptionalFieldsAreEmptyByDefault) {
     Context ctx("myApp");
-    auto sessionId  = ctx.getSessionId();
+    auto sessionId = ctx.getSessionId();
 
     EXPECT_FALSE(ctx.getUserId().has_value());
     EXPECT_FALSE(ctx.getEnvironment().has_value());
     EXPECT_FALSE(ctx.getRemoteAddress().has_value());
     EXPECT_FALSE(ctx.getCurrentTime().has_value());
-    //verify that _sessionId is not empty:
+    // verify that _sessionId is not empty:
     EXPECT_FALSE(sessionId.empty());
-    
 }
 
-TEST(ContextTest, SettersSetAndEmptyResets)
-{
+TEST(ContextTest, SettersSetAndEmptyResets) {
     MutableContext mCtx{};
 
     mCtx.setUserId("u1");
@@ -56,8 +48,7 @@ TEST(ContextTest, SettersSetAndEmptyResets)
     EXPECT_FALSE(mCtx.getRemoteAddress().has_value());
 }
 
-TEST(ContextTest, SetMutableFieldsFromContextClass)
-{
+TEST(ContextTest, SetMutableFieldsFromContextClass) {
     Context ctx{};
 
     ctx.setUserId("u1");
@@ -74,10 +65,7 @@ TEST(ContextTest, SetMutableFieldsFromContextClass)
     EXPECT_FALSE(ctx.getRemoteAddress().has_value());
 }
 
-
-
-TEST(ContextTest, SetPropertyAddsAndUpdates)
-{
+TEST(ContextTest, SetPropertyAddsAndUpdates) {
     MutableContext mCtx{};
 
     mCtx.setProperty("tenant", "acme");
@@ -90,8 +78,7 @@ TEST(ContextTest, SetPropertyAddsAndUpdates)
     EXPECT_EQ(mCtx.getProperties()[0].second, "acme2");
 }
 
-TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
-{
+TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys) {
     MutableContext mCtx{};
 
     mCtx.setProperty("", "x");
@@ -103,18 +90,16 @@ TEST(ContextTest, SetPropertyIgnoresEmptyAndReservedKeys)
     EXPECT_TRUE(mCtx.getProperties().empty());
 }
 
-TEST(ContextTest, SetPropertyFromContext)
-{
-    Context ctx("myApp","developpement");
+TEST(ContextTest, SetPropertyFromContext) {
+    Context ctx("myApp", "developpement");
 
-    ctx.setProperty("", "x");    
+    ctx.setProperty("", "x");
     ctx.setProperty("toto1", "1");
     EXPECT_FALSE(ctx.getProperties().empty());
     ASSERT_EQ(ctx.getProperties().size(), 1u);
 }
 
-TEST(ContextTest, SetCurrentTimeProperty)
-{
+TEST(ContextTest, SetCurrentTimeProperty) {
     Context ctx("myApp");
     EXPECT_FALSE(ctx.getCurrentTime().has_value());
     MutableContext mCtx{};
@@ -122,6 +107,3 @@ TEST(ContextTest, SetCurrentTimeProperty)
     ctx.updateMutableContext(mCtx);
     EXPECT_TRUE(ctx.getCurrentTime().has_value());
 }
-
-
-

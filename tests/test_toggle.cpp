@@ -6,8 +6,7 @@
 using unleash::Toggle;
 using unleash::Variant;
 
-TEST(ToggleTest, MinimalConstructorDefaultsToDisabled)
-{
+TEST(ToggleTest, MinimalConstructorDefaultsToDisabled) {
     Toggle t("flagA");
 
     EXPECT_EQ(t.name(), "flagA");
@@ -17,10 +16,9 @@ TEST(ToggleTest, MinimalConstructorDefaultsToDisabled)
     EXPECT_EQ(t.variant(), Variant::disabledFactory());
 }
 
-TEST(ToggleTest, FullConstructorSetsAllFields)
-{
+TEST(ToggleTest, FullConstructorSetsAllFields) {
     Variant v("red", true, Variant::Payload{"string", "hello"});
-    Toggle t("flagB", true,true, v);
+    Toggle t("flagB", true, true, v);
 
     EXPECT_EQ(t.name(), "flagB");
     EXPECT_TRUE(t.enabled());
@@ -32,10 +30,9 @@ TEST(ToggleTest, FullConstructorSetsAllFields)
     EXPECT_EQ(t.variant().payload()->value(), "hello");
 }
 
-TEST(ToggleTest, FullConstructorSetsWithDisabledVariant)
-{
-    Toggle t("flagB", true,true);
-    
+TEST(ToggleTest, FullConstructorSetsWithDisabledVariant) {
+    Toggle t("flagB", true, true);
+
     EXPECT_EQ(t.name(), "flagB");
     EXPECT_TRUE(t.enabled());
     EXPECT_TRUE(t.impressionData());
