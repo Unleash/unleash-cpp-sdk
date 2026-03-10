@@ -29,14 +29,13 @@ struct Waiter {
 
     bool waitFor(std::chrono::milliseconds timeout = 500ms) {
         std::unique_lock<std::mutex> lk(m);
-        return cv.wait_for(lk, timeout, [&]{ return done; });
+        return cv.wait_for(lk, timeout, [&] { return done; });
     }
 };
 
 } // namespace
 
-TEST(EventHandler, DoesNothingWhenNotStarted)
-{
+TEST(EventHandler, DoesNothingWhenNotStarted) {
     unleash::EventHandler eh;
 
     std::atomic<int> called{0};
@@ -50,8 +49,7 @@ TEST(EventHandler, DoesNothingWhenNotStarted)
     EXPECT_EQ(called.load(std::memory_order_relaxed), 0);
 }
 
-TEST(EventHandler, EmitsErrorWithPayload)
-{
+TEST(EventHandler, EmitsErrorWithPayload) {
     unleash::EventHandler eh;
     eh.start();
 
@@ -75,8 +73,7 @@ TEST(EventHandler, EmitsErrorWithPayload)
     eh.stop();
 }
 
-TEST(EventHandler, EmitsImpressionWithPayload)
-{
+TEST(EventHandler, EmitsImpressionWithPayload) {
     unleash::EventHandler eh;
     eh.start();
 
@@ -88,7 +85,6 @@ TEST(EventHandler, EmitsImpressionWithPayload)
     bool impression;
     std::string variantName;
 
-    
     eh.onImpression([&](const unleash::EventHandler::ClientImpression& impressionEvent) {
         contextName = impressionEvent.ctx.getAppName();
         flag = impressionEvent.flagName;
@@ -99,7 +95,8 @@ TEST(EventHandler, EmitsImpressionWithPayload)
         w.signal();
     });
 
-    unleash::EventHandler::ClientImpression event{unleash::Context{"myTestApp"}, "myFlag", true, "getVariant", false, "variant1"};
+    unleash::EventHandler::ClientImpression event{
+        unleash::Context{"myTestApp"}, "myFlag", true, "getVariant", false, "variant1"};
     eh.emitImpression(event);
 
     ASSERT_TRUE(w.waitFor(500ms)) << "Impression callback was not invoked in time";
@@ -109,12 +106,11 @@ TEST(EventHandler, EmitsImpressionWithPayload)
     EXPECT_EQ(eventType, "getVariant");
     EXPECT_FALSE(impression);
     EXPECT_EQ(variantName, "variant1");
-    
+
     eh.stop();
 }
 
-TEST(EventHandler, ClearAllDisablesCallbacks)
-{
+TEST(EventHandler, ClearAllDisablesCallbacks) {
     unleash::EventHandler eh;
     eh.start();
 
@@ -124,7 +120,10 @@ TEST(EventHandler, ClearAllDisablesCallbacks)
     // First time should work
     {
         Waiter w;
-        eh.onReady([&] { called.fetch_add(1, std::memory_order_relaxed); w.signal(); });
+        eh.onReady([&] {
+            called.fetch_add(1, std::memory_order_relaxed);
+            w.signal();
+        });
         eh.emitReady();
         ASSERT_TRUE(w.waitFor(500ms)) << "Ready callback was not invoked in time";
     }
@@ -140,8 +139,7 @@ TEST(EventHandler, ClearAllDisablesCallbacks)
     eh.stop();
 }
 
-TEST(EventHandler, StopIsCleanAndIdempotent)
-{
+TEST(EventHandler, StopIsCleanAndIdempotent) {
     unleash::EventHandler eh;
 
     // stop without start should be safe
@@ -156,8 +154,7 @@ TEST(EventHandler, StopIsCleanAndIdempotent)
     SUCCEED();
 }
 
-TEST(EventHandler, MultipleEmitsAreProcessed)
-{
+TEST(EventHandler, MultipleEmitsAreProcessed) {
     unleash::EventHandler eh;
     eh.start();
 
@@ -179,22 +176,18 @@ TEST(EventHandler, MultipleEmitsAreProcessed)
     // Wait until we see all of them (or timeout)
     {
         std::unique_lock<std::mutex> lk(m);
-        ASSERT_TRUE(cv.wait_for(lk, 1s, [&]{ return count == 5; }))
-            << "Expected 5 update callbacks, got " << count;
+        ASSERT_TRUE(cv.wait_for(lk, 1s, [&] { return count == 5; })) << "Expected 5 update callbacks, got " << count;
     }
 
     eh.stop();
 }
 
-TEST(EventHandler, CallbackExceptionDoesNotKillThread)
-{
+TEST(EventHandler, CallbackExceptionDoesNotKillThread) {
     unleash::EventHandler eh;
     eh.start();
 
     // Set a callback that throws
-    eh.onInit([&] {
-        throw std::runtime_error("boom");
-    });
+    eh.onInit([&] { throw std::runtime_error("boom"); });
 
     // And a second callback we can observe afterwards
     Waiter w;

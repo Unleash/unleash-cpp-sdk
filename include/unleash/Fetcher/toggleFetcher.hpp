@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Configuration/clientConfig.hpp"
 #include "unleash/Transport/httpClient.hpp"
@@ -8,40 +8,31 @@
 #include <string>
 #include <optional>
 
+namespace unleash {
 
-
-
-namespace unleash
-{
-
-
-class ToggleFetcher
-{
-public: 
-
+class ToggleFetcher {
+  public:
     struct FetchResult {
-        int status = -1;                         
-        std::optional<ToggleSet> toggles = std::nullopt; 
-        std::optional<std::string> error;                       
+        int status = -1;
+        std::optional<ToggleSet> toggles = std::nullopt;
+        std::optional<std::string> error;
     };
 
     ToggleFetcher(const ClientConfig& p_config);
 
     FetchResult fetch(const Context& p_ctx);
 
-    const HttpRequest& getHttpRequest() const
-    {
+    const HttpRequest& getHttpRequest() const {
         return _httpRequest;
     }
 
-private: 
+  private:
     void makeFrontendRequest(const ClientConfig& p_config);
 
     HttpClient _httpClient;
     HttpRequest _httpRequest;
     std::string _baseUrl;
     std::string _etag;
-
 };
 
 } // namespace unleash

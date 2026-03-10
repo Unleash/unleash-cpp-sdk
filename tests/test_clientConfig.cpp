@@ -8,17 +8,13 @@
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Domain/toggle.hpp"
 
-
-
 using namespace unleash;
 
-
-TEST(ClientConfig, ConstructorStoresMandatoryFields)
-{
+TEST(ClientConfig, ConstructorStoresMandatoryFields) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_EQ(cfg.url(), "http://example");
@@ -26,22 +22,20 @@ TEST(ClientConfig, ConstructorStoresMandatoryFields)
     EXPECT_EQ(cfg.appName(), "cppApp");
 }
 
-TEST(ClientConfig, OnEmptyAppNameDefaultNameUsed)
-{
+TEST(ClientConfig, OnEmptyAppNameDefaultNameUsed) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "";
-    
+
     ClientConfig cfg(url, key, appName);
     EXPECT_EQ(cfg.appName(), std::string(utils::defaultAppName));
 }
 
-TEST(ClientConfig, DefaultRefreshAndMetricsMatchExpectedBehavior)
-{
+TEST(ClientConfig, DefaultRefreshAndMetricsMatchExpectedBehavior) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_EQ(cfg.refreshInterval().count(), 0);
@@ -51,12 +45,11 @@ TEST(ClientConfig, DefaultRefreshAndMetricsMatchExpectedBehavior)
     EXPECT_FALSE(cfg.isMetricsEnabled());
 }
 
-TEST(ClientConfig, RefreshEnabledRespectsDisableRefreshAndZeroInterval)
-{
+TEST(ClientConfig, RefreshEnabledRespectsDisableRefreshAndZeroInterval) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_FALSE(cfg.isRefreshEnabled());
@@ -65,12 +58,11 @@ TEST(ClientConfig, RefreshEnabledRespectsDisableRefreshAndZeroInterval)
     EXPECT_TRUE(cfg.isRefreshEnabled());
 }
 
-TEST(ClientConfig, MetricsEnabledRespectsDisableMetricsAndZeroInterval)
-{
+TEST(ClientConfig, MetricsEnabledRespectsDisableMetricsAndZeroInterval) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_FALSE(cfg.isMetricsEnabled());
@@ -79,64 +71,57 @@ TEST(ClientConfig, MetricsEnabledRespectsDisableMetricsAndZeroInterval)
     EXPECT_TRUE(cfg.isMetricsEnabled());
 }
 
-TEST(ClientConfig, HeaderAndCustomHeadersDefaultsAndSetters)
-{
+TEST(ClientConfig, HeaderAndCustomHeadersDefaultsAndSetters) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
     EXPECT_EQ(cfg.headerName(), std::string(utils::defaultHeadeName));
     EXPECT_TRUE(cfg.customHeaders().empty());
 
-        std::map<std::string, std::string> h;
+    std::map<std::string, std::string> h;
     h["X-Test"] = "123";
     h["X-Client"] = "cpp";
-    cfg.setHeaderName("X-Auth")
-       .setCustomHeaders(h);
+    cfg.setHeaderName("X-Auth").setCustomHeaders(h);
 
     EXPECT_EQ(cfg.headerName(), "X-Auth");
     EXPECT_EQ(cfg.customHeaders().at("X-Test"), "123");
     EXPECT_EQ(cfg.customHeaders().at("X-Client"), "cpp");
-
 }
 
-TEST(ClientConfig, ImpressionAndPostRequestsFlags)
-{
+TEST(ClientConfig, ImpressionAndPostRequestsFlags) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_FALSE(cfg.impressionDataAll());
     EXPECT_FALSE(cfg.usePostRequests());
 
-    cfg.setImpressionDataAll(true)
-       .setUsePostRequests(true);
+    cfg.setImpressionDataAll(true).setUsePostRequests(true);
 
     EXPECT_TRUE(cfg.impressionDataAll());
     EXPECT_TRUE(cfg.usePostRequests());
 }
 
-TEST(ClientConfig, BootstrapOptionalAbsentByDefault)
-{
+TEST(ClientConfig, BootstrapOptionalAbsentByDefault) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     EXPECT_FALSE(cfg.bootstrap().has_value());
-    EXPECT_TRUE(cfg.bootstrapOverride()); 
+    EXPECT_TRUE(cfg.bootstrapOverride());
 }
 
-TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor)
-{
+TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
 
     ToggleSet::Map m;
@@ -154,39 +139,35 @@ TEST(ClientConfig, BootstrapStoresMapAndDoesNotGetEmptiedByToggleSetCtor)
     EXPECT_EQ(cfg.bootstrap()->getToggles().size(), 2u);
 }
 
-TEST(ClientConfig, ValidateRejectsEmptyMandatoryFields)
-{
+TEST(ClientConfig, ValidateRejectsEmptyMandatoryFields) {
     std::string url = "";
     std::string key = "";
     std::string appName = "";
-    
+
     ClientConfig cfg(url, key, appName);
     EXPECT_FALSE(cfg.isValid());
 }
 
-TEST(ClientConfig, ValidateRejectsNegativeIntervals)
-{
+TEST(ClientConfig, ValidateRejectsNegativeIntervals) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
     cfg.setRefreshInterval(utils::seconds{-1});
     EXPECT_FALSE(cfg.isValid());
 }
 
-TEST(ClientConfig, ValidateAcceptsDefaultCorrectConfig)
-{
+TEST(ClientConfig, ValidateAcceptsDefaultCorrectConfig) {
     std::string url = "http://example";
     std::string key = "key123";
     std::string appName = "cppApp";
-    
+
     ClientConfig cfg(url, key, appName);
     EXPECT_TRUE(cfg.isValid());
 }
 
-TEST(ClientConfig, StorageProvider_DefaultIsNonNullAndLocalStorageProvider)
-{
+TEST(ClientConfig, StorageProvider_DefaultIsNonNullAndLocalStorageProvider) {
     ClientConfig cfg("http://example", "key123", "cppApp");
 
     auto sp = cfg.storageProvider();
@@ -197,8 +178,7 @@ TEST(ClientConfig, StorageProvider_DefaultIsNonNullAndLocalStorageProvider)
     EXPECT_NE(local, nullptr);
 }
 
-TEST(ClientConfig, StorageProvider_SetterReplacesProviderAndIgnoresNull)
-{
+TEST(ClientConfig, StorageProvider_SetterReplacesProviderAndIgnoresNull) {
     ClientConfig cfg("http://example", "key123", "cppApp");
 
     auto initial = cfg.storageProvider();

@@ -15,8 +15,7 @@ using namespace unleash;
 
 namespace {
 
-static ClientConfig makeCfgForMetrics(const std::string& appName, const std::string& instanceId)
-{
+static ClientConfig makeCfgForMetrics(const std::string& appName, const std::string& instanceId) {
     ClientConfig cfg("http://127.0.0.1:1", "dummy-key", appName);
 
     cfg.setInstanceId(instanceId);
@@ -24,15 +23,13 @@ static ClientConfig makeCfgForMetrics(const std::string& appName, const std::str
     return cfg;
 }
 
-static json parsePayload(const std::string& s)
-{
+static json parsePayload(const std::string& s) {
     return json::parse(s);
 }
 
 } // namespace
 
-TEST(MetricsStoreTest, InitiallyEmpty_StartTimestampSet_ToJsonReturnsNullopt)
-{
+TEST(MetricsStoreTest, InitiallyEmpty_StartTimestampSet_ToJsonReturnsNullopt) {
     auto cfg = makeCfgForMetrics("unleash-demo2", "browser");
     MetricsStore store(cfg);
 
@@ -45,14 +42,13 @@ TEST(MetricsStoreTest, InitiallyEmpty_StartTimestampSet_ToJsonReturnsNullopt)
     EXPECT_FALSE(payload.has_value());
 }
 
-TEST(MetricsStoreTest, AddMetricData_MakesNonEmpty_AndSnapshotReflectsMetrics)
-{
+TEST(MetricsStoreTest, AddMetricData_MakesNonEmpty_AndSnapshotReflectsMetrics) {
     auto cfg = makeCfgForMetrics("unleash-demo2", "browser");
     MetricsStore store(cfg);
 
     store.addVariantMetric("test-flag", true, "hello");
     store.addVariantMetric("test-flag", true, "hello");
-    store.addVariantMetric("test-flag", false, "hello"); 
+    store.addVariantMetric("test-flag", false, "hello");
 
     EXPECT_FALSE(store.empty());
 
@@ -69,8 +65,7 @@ TEST(MetricsStoreTest, AddMetricData_MakesNonEmpty_AndSnapshotReflectsMetrics)
     EXPECT_EQ(it->second.getVariantStats().at("hello"), 3u);
 }
 
-TEST(MetricsStoreTest, Reset_EmptiesAndUpdatesStartTimestamp)
-{
+TEST(MetricsStoreTest, Reset_EmptiesAndUpdatesStartTimestamp) {
     auto cfg = makeCfgForMetrics("unleash-demo2", "browser");
     MetricsStore store(cfg);
 
@@ -86,13 +81,12 @@ TEST(MetricsStoreTest, Reset_EmptiesAndUpdatesStartTimestamp)
     EXPECT_GE(after, before);
 }
 
-TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
-{
+TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts) {
     auto cfg = makeCfgForMetrics("unleash-demo2", "browser");
     MetricsStore store(cfg);
 
     for (int i = 0; i < 6; ++i) {
-        store.addVariantMetric("test-flag", true,  "hello");
+        store.addVariantMetric("test-flag", true, "hello");
         store.addVariantMetric("test-flag2", true, "hello");
     }
 
@@ -106,7 +100,7 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
     ASSERT_TRUE(j.contains("instanceId"));
 
     EXPECT_EQ(j["appName"], "unleash-demo2");
-    EXPECT_EQ(j["instanceId"], "browser"); 
+    EXPECT_EQ(j["instanceId"], "browser");
 
     const auto& b = j["bucket"];
     ASSERT_TRUE(b.is_object());
@@ -140,19 +134,18 @@ TEST(MetricsStoreTest, toJsonMetricsPayload_EncodesExpectedShapeAndCounts)
     }
 }
 
-TEST(MetricsStoreTest, ThreadSafety_ManyThreadsUpdatingTotalsAreCorrect)
-{
+TEST(MetricsStoreTest, ThreadSafety_ManyThreadsUpdatingTotalsAreCorrect) {
     auto cfg = makeCfgForMetrics("unleash-demo2", "browser");
     MetricsStore store(cfg);
 
     constexpr int kThreads = 8;
-    constexpr int kIters   = 2000;
+    constexpr int kIters = 2000;
 
     std::vector<std::thread> threads;
     threads.reserve(kThreads);
 
     for (int t = 0; t < kThreads; ++t) {
-        threads.emplace_back([&store, &kIters , t] {
+        threads.emplace_back([&store, &kIters, t] {
             for (int i = 0; i < kIters; ++i) {
                 const bool yes = ((i + t) % 2) == 0;
                 if ((i % 2) == 0)
@@ -163,7 +156,8 @@ TEST(MetricsStoreTest, ThreadSafety_ManyThreadsUpdatingTotalsAreCorrect)
         });
     }
 
-    for (auto& th : threads) th.join();
+    for (auto& th : threads)
+        th.join();
 
     MetricList snap = store.snapshot();
     const auto& m = snap.getList();

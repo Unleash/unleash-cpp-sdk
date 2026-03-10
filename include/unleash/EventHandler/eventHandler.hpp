@@ -12,20 +12,12 @@
 
 #include "unleash/Domain/context.hpp"
 
-namespace unleash 
-{
-    
-enum class ClientEvent : std::uint8_t {
-    Init,
-    Error,
-    Ready,
-    Update,
-    Impression
-};
+namespace unleash {
 
-class EventHandler final
-{
-public:
+enum class ClientEvent : std::uint8_t { Init, Error, Ready, Update, Impression };
+
+class EventHandler final {
+  public:
     struct ClientError final {
         std::string message;
         std::string details;
@@ -39,15 +31,15 @@ public:
         std::string variant = "";
     };
 
-    using InitCallback       = std::function<void()>;
-    using ErrorCallback      = std::function<void(const ClientError&)>;
-    using ReadyCallback      = std::function<void()>;
-    using UpdateCallback     = std::function<void()>;
+    using InitCallback = std::function<void()>;
+    using ErrorCallback = std::function<void(const ClientError&)>;
+    using ReadyCallback = std::function<void()>;
+    using UpdateCallback = std::function<void()>;
     using ImpressionCallback = std::function<void(const ClientImpression&)>;
 
     EventHandler();
     ~EventHandler();
-    
+
     EventHandler(const EventHandler&) = delete;
     EventHandler& operator=(const EventHandler&) = delete;
 
@@ -70,29 +62,27 @@ public:
 
     void clearAll();
 
-private:
-    //event dispatch thread routine 
+  private:
+    // event dispatch thread routine
     void eventLoop();
-    
+
     using EventTask = std::function<void()>;
-    
+
     mutable std::queue<EventTask> _eventQueue;
     mutable std::mutex _queueMutex;
     mutable std::condition_variable _queueCV;
-    
+
     // Event dispatch thread
     std::thread _eventThread;
     std::atomic<bool> _started{false};
     std::atomic<bool> _running{false};
-    
+
     // Callback storage:
-    mutable std::shared_ptr<InitCallback>       _initCb;
-    mutable std::shared_ptr<ErrorCallback>      _errorCb;
-    mutable std::shared_ptr<ReadyCallback>      _readyCb;
-    mutable std::shared_ptr<UpdateCallback>     _updateCb;
+    mutable std::shared_ptr<InitCallback> _initCb;
+    mutable std::shared_ptr<ErrorCallback> _errorCb;
+    mutable std::shared_ptr<ReadyCallback> _readyCb;
+    mutable std::shared_ptr<UpdateCallback> _updateCb;
     mutable std::shared_ptr<ImpressionCallback> _impressionCb;
 };
 
 } // namespace unleash
-
-

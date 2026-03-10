@@ -7,11 +7,10 @@
 #include <string>
 #include <optional>
 
-
 namespace unleash {
 
 class MetricsStore final {
-public:
+  public:
     using clock = std::chrono::system_clock;
 
     MetricsStore(const ClientConfig& p_cfg);
@@ -30,16 +29,15 @@ public:
 
     std::optional<std::string> toJsonMetricsPayload() const;
 
-private:
+  private:
     static std::int64_t nowMs();
 
-private:
+  private:
     mutable std::mutex _mtx;
     MetricList _list;
     std::int64_t _startMs = 0;
     std::string _appName;
     std::string _instanceId;
-      
 };
 
 } // namespace unleash
