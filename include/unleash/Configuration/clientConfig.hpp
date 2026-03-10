@@ -12,26 +12,22 @@
 #include "unleash/Utils/utils.hpp"
 #include "unleash/Store/storageProvider.hpp"
 
-
-
-namespace unleash 
-{
+namespace unleash {
 
 class Bootstrap final {
-public:
+  public:
     explicit Bootstrap(ToggleSet::Map p_map);
     const ToggleSet::Map& getToggles() const;
-private: 
+
+  private:
     ToggleSet::Map _map;
 };
 
 class ClientConfig final {
 
-public:
-
-    
+  public:
     ClientConfig(const std::string& p_url, const std::string& p_clientKey, const std::string& p_appName);
-    //setters:
+    // setters:
     ClientConfig& setInstanceId(const std::string& p_instanceId);
     ClientConfig& setRefreshInterval(utils::seconds s);
     ClientConfig& setMetricsInterval(utils::seconds s);
@@ -46,8 +42,7 @@ public:
 
     ClientConfig& setStorageProvider(std::shared_ptr<IStorageProvider> provider);
 
-
-    //getters: 
+    // getters:
     const std::string& url() const;
     const std::string& clientKey() const;
     const std::string& appName() const;
@@ -69,13 +64,9 @@ public:
 
     std::shared_ptr<IStorageProvider> storageProvider() const;
 
-
-
-    
-
     bool isValid();
-private: 
 
+  private:
     std::string _url;
     std::string _clientKey;
     std::string _appName;
@@ -86,17 +77,14 @@ private:
     utils::seconds _metricsIntervalInitial{0};
     std::optional<Bootstrap> _bootstrap{};
     bool _bootstrapOverride{true};
-    std::string _headerName =  std::string(utils::defaultHeadeName);
+    std::string _headerName = std::string(utils::defaultHeadeName);
     std::map<std::string, std::string> _customHeaders{};
     bool _impressionDataAll{false};
     bool _usePostRequests{false};
     std::string _instanceId = std::string(utils::defaultInstanceId);
     utils::mSeconds _timeOutQueryMS{5};
-    //StorageProvider: 
+    // StorageProvider:
     std::shared_ptr<IStorageProvider> _storageProvider;
-
-    
 };
 
-
-}// namespace unleash
+} // namespace unleash

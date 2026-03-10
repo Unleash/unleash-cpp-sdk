@@ -9,18 +9,13 @@ using unleash::Toggle;
 using unleash::ToggleSet;
 using unleash::Variant;
 
-static Toggle makeToggle(std::string name,
-                         bool enabled,
-                         bool impression,
-                         std::string variantName = "disabled",
-                         bool variantEnabled = false)
-{
-    Toggle t(std::move(name), enabled,impression, Variant(std::move(variantName), variantEnabled)); 
+static Toggle makeToggle(std::string name, bool enabled, bool impression, std::string variantName = "disabled",
+                         bool variantEnabled = false) {
+    Toggle t(std::move(name), enabled, impression, Variant(std::move(variantName), variantEnabled));
     return t;
 }
 
-TEST(ToggleSetTest, DefaultConstructedIsEmpty)
-{
+TEST(ToggleSetTest, DefaultConstructedIsEmpty) {
     ToggleSet set;
     EXPECT_EQ(set.size(), 0u);
 
@@ -31,11 +26,10 @@ TEST(ToggleSetTest, DefaultConstructedIsEmpty)
     EXPECT_FALSE(set.impressionData("missing"));
 }
 
-TEST(ToggleSetTest, ConstructFromVector_BuildsLookup)
-{
+TEST(ToggleSetTest, ConstructFromVector_BuildsLookup) {
     std::vector<Toggle> toggles;
-    toggles.emplace_back(makeToggle("A", true,  false, "red",  true));
-    toggles.emplace_back(makeToggle("B", false, true,  "blue", true));
+    toggles.emplace_back(makeToggle("A", true, false, "red", true));
+    toggles.emplace_back(makeToggle("B", false, true, "blue", true));
 
     ToggleSet set(toggles);
 
@@ -43,7 +37,7 @@ TEST(ToggleSetTest, ConstructFromVector_BuildsLookup)
     EXPECT_TRUE(set.contains("A"));
     EXPECT_TRUE(set.contains("B"));
     EXPECT_FALSE(set.contains("C"));
-    
+
     EXPECT_TRUE(set.isEnabled("A"));
     EXPECT_FALSE(set.impressionData("A"));
     EXPECT_EQ(set.getVariant("A").name(), "red");
@@ -55,10 +49,9 @@ TEST(ToggleSetTest, ConstructFromVector_BuildsLookup)
     EXPECT_TRUE(set.getVariant("B").enabled());
 }
 
-TEST(ToggleSetTest, ConstructFromMoveVector_BuildsLookup)
-{
+TEST(ToggleSetTest, ConstructFromMoveVector_BuildsLookup) {
     std::vector<Toggle> toggles;
-    toggles.emplace_back(makeToggle("X", true,  true,  "v1", true));
+    toggles.emplace_back(makeToggle("X", true, true, "v1", true));
     toggles.emplace_back(makeToggle("Y", false, false, "v2", true));
 
     ToggleSet set(std::move(toggles));
@@ -76,11 +69,8 @@ TEST(ToggleSetTest, ConstructFromMoveVector_BuildsLookup)
     EXPECT_EQ(set.getVariant("Y").name(), "v2");
 }
 
-TEST(ToggleSetTest, MissingToggleReturnsDefaultsEvenWhenNotEmpty)
-{
-    ToggleSet set(std::vector<Toggle>{
-        makeToggle("exists", true, true, "x", true)
-    });
+TEST(ToggleSetTest, MissingToggleReturnsDefaultsEvenWhenNotEmpty) {
+    ToggleSet set(std::vector<Toggle>{makeToggle("exists", true, true, "x", true)});
 
     EXPECT_FALSE(set.contains("missing"));
     EXPECT_FALSE(set.isEnabled("missing"));
@@ -88,11 +78,10 @@ TEST(ToggleSetTest, MissingToggleReturnsDefaultsEvenWhenNotEmpty)
     EXPECT_EQ(set.getVariant("missing"), Variant::disabledFactory());
 }
 
-TEST(ToggleSetTest, DuplicateNames_FirstOneWins)
-{
+TEST(ToggleSetTest, DuplicateNames_FirstOneWins) {
     std::vector<Toggle> toggles;
     toggles.emplace_back(makeToggle("dup", false, false, "old", false));
-    toggles.emplace_back(makeToggle("dup", true,  true,  "new", true));
+    toggles.emplace_back(makeToggle("dup", true, true, "new", true));
 
     ToggleSet set(std::move(toggles));
 

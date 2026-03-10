@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04 # So we can pin clang-format to a specific version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          python -m pip install --upgrade pip
+          python -m pip install conan
+          
+
+      - name: Format check
+        run: |
+          ./scripts/format.sh
+          git diff --exit-code
+
+      - name: Configure Conan profile
+        run: conan profile detect --force
+
+      - name: Configure (Conan + CMake)
+        run: |
+          conan install . -of build -s build_type=Release --build=missing
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUNLEASH_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --target unleash_tests
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
