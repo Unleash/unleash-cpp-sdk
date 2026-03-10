@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include <atomic>
 #include <memory>
@@ -18,41 +18,31 @@
 #include "unleash/Fetcher/toggleFetcher.hpp"
 #include "unleash/Store/storageProvider.hpp"
 
-namespace unleash 
-{
+namespace unleash {
 
-enum class SdkState : std::uint8_t {
-    Started,
-    Healthy,
-    Error,
-    Stopped
-};
+enum class SdkState : std::uint8_t { Started, Healthy, Error, Stopped };
 
-class UnleashClient
-{
-public: 
+class UnleashClient {
+  public:
     explicit UnleashClient(ClientConfig p_config, Context p_ctx);
-    
+
     ~UnleashClient();
 
     UnleashClient(const UnleashClient&) = delete;
     UnleashClient& operator=(const UnleashClient&) = delete;
 
-    
-    
     void start();
     void stop();
 
     bool isRunning() const noexcept;
     bool isReady() const noexcept;
 
-    bool isEnabled( const std::string& flagName);
+    bool isEnabled(const std::string& flagName);
 
     std::optional<Variant> getVariant(const std::string& flagName);
     bool impressionData(const std::string& flagName) const;
 
-
-    //Context handlers: 
+    // Context handlers:
     Context context() const;
     void updateContext(const MutableContext& p_mCtx);
 
@@ -63,8 +53,7 @@ public:
     UnleashClient& onUpdate(EventHandler::UpdateCallback cb);
     UnleashClient& onImpression(EventHandler::ImpressionCallback cb);
 
-private: 
-
+  private:
     bool isStoreReady();
 
     void initializeToggleCache();
@@ -81,37 +70,32 @@ private:
 
     void singleFetchToggles(const Context& p_ctx);
 
-
-    
     ClientConfig _config;
     Context _context;
-    //stores: 
+    // stores:
     FlagStore _flagStore;
     MetricsStore _metricStore;
-    //senders: 
+    // senders:
     MetricSender _metricSender;
-    //toggle Fetcher: 
+    // toggle Fetcher:
     ToggleFetcher _toggleFetcher;
-    //even handler: 
+    // even handler:
     std::shared_ptr<EventHandler> _eventHandler;
 
-    
     std::atomic_bool _running{false};
     std::atomic_bool _ready{false};
     std::atomic_bool _exitThreads{false};
     bool _contextUpdated{false};
 
-
-    //Thread variables: 
+    // Thread variables:
     std::thread _fPollingThread;
     std::thread _mSendingThread;
-    //multithreading Data race handling : 
-    std::condition_variable _cvMetrics,_cvPolling;
+    // multithreading Data race handling :
+    std::condition_variable _cvMetrics, _cvPolling;
     std::mutex _mutexMetrics, _mutexPolling;
 
-    //sdkState: 
-    SdkState _sdkState {SdkState::Stopped};
-    
+    // sdkState:
+    SdkState _sdkState{SdkState::Stopped};
 };
 
-}
+} // namespace unleash

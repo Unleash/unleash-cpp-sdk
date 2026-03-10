@@ -16,10 +16,10 @@
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-#  define NOMINMAX
+#define NOMINMAX
 #endif
 
 #include <winsock2.h>
@@ -28,21 +28,32 @@
 using socket_t = SOCKET;
 static constexpr socket_t kInvalidSocket = INVALID_SOCKET;
 
-static inline bool  socket_valid(socket_t s)    { return s != INVALID_SOCKET; }
-static inline int   socket_last_error()          { return WSAGetLastError(); }
-static inline int   socket_shutdown(socket_t s)  { return ::shutdown(s, SD_BOTH); }
-static inline int   socket_close(socket_t s)     { return ::closesocket(s); }
+static inline bool socket_valid(socket_t s) {
+    return s != INVALID_SOCKET;
+}
+static inline int socket_last_error() {
+    return WSAGetLastError();
+}
+static inline int socket_shutdown(socket_t s) {
+    return ::shutdown(s, SD_BOTH);
+}
+static inline int socket_close(socket_t s) {
+    return ::closesocket(s);
+}
 
 struct WsaGuard {
     WsaGuard() {
         WSADATA d{};
         const int rc = ::WSAStartup(MAKEWORD(2, 2), &d);
-        if (rc != 0) throw std::runtime_error("WSAStartup() failed: " + std::to_string(rc));
+        if (rc != 0)
+            throw std::runtime_error("WSAStartup() failed: " + std::to_string(rc));
     }
-    ~WsaGuard() { ::WSACleanup(); }
+    ~WsaGuard() {
+        ::WSACleanup();
+    }
 };
 
-#else 
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/select.h>
@@ -53,10 +64,18 @@ struct WsaGuard {
 using socket_t = int;
 static constexpr socket_t kInvalidSocket = -1;
 
-static inline bool  socket_valid(socket_t s)    { return s >= 0; }
-static inline int   socket_last_error()          { return errno; }
-static inline int   socket_shutdown(socket_t s)  { return ::shutdown(s, SHUT_RDWR); }
-static inline int   socket_close(socket_t s)     { return ::close(s); }
+static inline bool socket_valid(socket_t s) {
+    return s >= 0;
+}
+static inline int socket_last_error() {
+    return errno;
+}
+static inline int socket_shutdown(socket_t s) {
+    return ::shutdown(s, SHUT_RDWR);
+}
+static inline int socket_close(socket_t s) {
+    return ::close(s);
+}
 #endif
 // ----------------------------------------------------------------
 
@@ -71,43 +90,45 @@ struct CapturedRequest {
 };
 
 static std::string toLower(std::string s) {
-    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    for (auto& c : s)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     return s;
 }
 
 static void trim(std::string& s) {
-    while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) s.erase(s.begin());
-    while (!s.empty() && (s.back() == '\r' || s.back() == ' ' || s.back() == '\t')) s.pop_back();
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t'))
+        s.erase(s.begin());
+    while (!s.empty() && (s.back() == '\r' || s.back() == ' ' || s.back() == '\t'))
+        s.pop_back();
 }
 
 static bool contains(const std::string& s, const std::string& sub) {
     return s.find(sub) != std::string::npos;
 }
 
-static void sendAll(socket_t fd, const std::string& s)
-{
-    const char* p    = s.data();
-    size_t      left = s.size();
+static void sendAll(socket_t fd, const std::string& s) {
+    const char* p = s.data();
+    size_t left = s.size();
     while (left > 0) {
 #ifdef _WIN32
         const int chunk = static_cast<int>((left > 64u * 1024u) ? 64u * 1024u : left);
-        const int n     = ::send(fd, p, chunk, 0);
+        const int n = ::send(fd, p, chunk, 0);
 #else
         const ssize_t n = ::send(fd, p, left, 0);
 #endif
-        if (n <= 0) return;
-        p    += static_cast<size_t>(n);
+        if (n <= 0)
+            return;
+        p += static_cast<size_t>(n);
         left -= static_cast<size_t>(n);
     }
 }
 
 struct HeadRead {
-    std::string headers;   
+    std::string headers;
     std::string remainder;
 };
 
-static HeadRead recvHeadersWithRemainder(socket_t fd)
-{
+static HeadRead recvHeadersWithRemainder(socket_t fd) {
     std::string buf;
     buf.reserve(4096);
 
@@ -117,7 +138,7 @@ static HeadRead recvHeadersWithRemainder(socket_t fd)
         if (pos != std::string::npos) {
             HeadRead out;
             const std::size_t end = pos + 4;
-            out.headers   = buf.substr(0, end);
+            out.headers = buf.substr(0, end);
             out.remainder = buf.substr(end);
             return out;
         }
@@ -133,7 +154,7 @@ static HeadRead recvHeadersWithRemainder(socket_t fd)
         }
         buf.append(tmp, tmp + n);
 
-        if (buf.size() > 1024 * 1024) { 
+        if (buf.size() > 1024 * 1024) {
             HeadRead out;
             out.headers = buf;
             return out;
@@ -141,8 +162,7 @@ static HeadRead recvHeadersWithRemainder(socket_t fd)
     }
 }
 
-static std::string readBodyContentLength(socket_t fd, std::string remainder, std::size_t contentLen)
-{
+static std::string readBodyContentLength(socket_t fd, std::string remainder, std::size_t contentLen) {
     std::string body;
     body.reserve(contentLen);
 
@@ -155,21 +175,21 @@ static std::string readBodyContentLength(socket_t fd, std::string remainder, std
     char tmp[4096];
     while (body.size() < contentLen) {
         const std::size_t need = contentLen - body.size();
-        const std::size_t ask  = (need < sizeof(tmp)) ? need : sizeof(tmp);
+        const std::size_t ask = (need < sizeof(tmp)) ? need : sizeof(tmp);
 #ifdef _WIN32
         const int n = ::recv(fd, tmp, static_cast<int>(ask), 0);
 #else
         const ssize_t n = ::recv(fd, tmp, ask, 0);
 #endif
-        if (n <= 0) break;
+        if (n <= 0)
+            break;
         body.append(tmp, tmp + n);
     }
 
     return body;
 }
 
-static std::string recvChunkedBody(socket_t fd, std::string remainder)
-{
+static std::string recvChunkedBody(socket_t fd, std::string remainder) {
     std::string body;
     std::string buf = std::move(remainder);
 
@@ -180,7 +200,8 @@ static std::string recvChunkedBody(socket_t fd, std::string remainder)
 #else
         const ssize_t n = ::recv(fd, tmp, sizeof(tmp), 0);
 #endif
-        if (n <= 0) return false;
+        if (n <= 0)
+            return false;
         dst.append(tmp, tmp + n);
         return true;
     };
@@ -193,20 +214,26 @@ static std::string recvChunkedBody(socket_t fd, std::string remainder)
                 buf.erase(0, pos + 2);
                 return true;
             }
-            if (!recvSome(buf)) return false;
+            if (!recvSome(buf))
+                return false;
         }
     };
 
     while (true) {
         std::string line;
-        if (!readLine(line)) return body;
+        if (!readLine(line))
+            return body;
 
         auto semi = line.find(';');
-        if (semi != std::string::npos) line = line.substr(0, semi);
+        if (semi != std::string::npos)
+            line = line.substr(0, semi);
 
         std::size_t chunkSize = 0;
-        try { chunkSize = std::stoul(line, nullptr, 16); }
-        catch (...) { return body; }
+        try {
+            chunkSize = std::stoul(line, nullptr, 16);
+        } catch (...) {
+            return body;
+        }
 
         if (chunkSize == 0) {
             std::string trailer;
@@ -215,7 +242,8 @@ static std::string recvChunkedBody(socket_t fd, std::string remainder)
         }
 
         while (buf.size() < chunkSize + 2) {
-            if (!recvSome(buf)) break;
+            if (!recvSome(buf))
+                break;
         }
         if (buf.size() < chunkSize + 2) {
             const std::size_t take = (chunkSize < buf.size()) ? chunkSize : buf.size();
@@ -224,34 +252,35 @@ static std::string recvChunkedBody(socket_t fd, std::string remainder)
         }
 
         body.append(buf.data(), chunkSize);
-        buf.erase(0, chunkSize + 2); 
+        buf.erase(0, chunkSize + 2);
     }
 }
 
-static CapturedRequest parseHeadersOnly(const std::string& head,
-                                        std::int64_t&       contentLen,
-                                        bool&               isChunked,
-                                        bool&               expect100Continue)
-{
+static CapturedRequest parseHeadersOnly(const std::string& head, std::int64_t& contentLen, bool& isChunked,
+                                        bool& expect100Continue) {
     CapturedRequest cr;
 
     std::istringstream iss(head);
     std::string line;
 
     std::getline(iss, line);
-    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (!line.empty() && line.back() == '\r')
+        line.pop_back();
     cr.requestLine = line;
 
-    contentLen        = 0;
-    isChunked         = false;
+    contentLen = 0;
+    isChunked = false;
     expect100Continue = false;
 
     while (std::getline(iss, line)) {
-        if (line == "\r" || line.empty()) break;
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == "\r" || line.empty())
+            break;
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
 
         auto pos = line.find(':');
-        if (pos == std::string::npos) continue;
+        if (pos == std::string::npos)
+            continue;
 
         std::string k = line.substr(0, pos);
         std::string v = line.substr(pos + 1);
@@ -264,7 +293,11 @@ static CapturedRequest parseHeadersOnly(const std::string& head,
         cr.headersLower[kl] = v;
 
         if (kl == "content-length") {
-            try { contentLen = std::stoll(v); } catch (...) { contentLen = 0; }
+            try {
+                contentLen = std::stoll(v);
+            } catch (...) {
+                contentLen = 0;
+            }
         } else if (kl == "transfer-encoding" && contains(vl, "chunked")) {
             isChunked = true;
         } else if (kl == "expect" && contains(vl, "100-continue")) {
@@ -276,10 +309,8 @@ static CapturedRequest parseHeadersOnly(const std::string& head,
 }
 
 class MiniHttpServer {
-public:
-    explicit MiniHttpServer(int responseStatus)
-        : _responseStatus(responseStatus)
-    {
+  public:
+    explicit MiniHttpServer(int responseStatus) : _responseStatus(responseStatus) {
 #ifdef _WIN32
         _wsa.emplace();
 #endif
@@ -289,16 +320,15 @@ public:
 
         int yes = 1;
 #ifdef _WIN32
-        ::setsockopt(_listenFd, SOL_SOCKET, SO_REUSEADDR,
-                     reinterpret_cast<const char*>(&yes), sizeof(yes));
+        ::setsockopt(_listenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(yes));
 #else
         ::setsockopt(_listenFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 #endif
 
         sockaddr_in addr{};
-        addr.sin_family      = AF_INET;
+        addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        addr.sin_port        = htons(0); 
+        addr.sin_port = htons(0);
 
         if (::bind(_listenFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
             throw std::runtime_error("bind() failed: " + std::to_string(socket_last_error()));
@@ -315,8 +345,7 @@ public:
         _thread = std::thread([this] { loop(); });
     }
 
-    ~MiniHttpServer()
-    {
+    ~MiniHttpServer() {
         _stop.store(true);
 
         if (socket_valid(_listenFd)) {
@@ -324,71 +353,76 @@ public:
             _listenFd = kInvalidSocket;
         }
 
-        if (_thread.joinable()) _thread.join();
+        if (_thread.joinable())
+            _thread.join();
     }
 
-    int port() const { return _port; }
+    int port() const {
+        return _port;
+    }
 
-    bool waitForOneRequest(std::chrono::milliseconds timeout)
-    {
+    bool waitForOneRequest(std::chrono::milliseconds timeout) {
         const auto deadline = std::chrono::steady_clock::now() + timeout;
         while (std::chrono::steady_clock::now() < deadline) {
-            if (_gotRequest.load()) return true;
+            if (_gotRequest.load())
+                return true;
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         return _gotRequest.load();
     }
 
-    CapturedRequest captured() const { return _captured; }
+    CapturedRequest captured() const {
+        return _captured;
+    }
 
-private:
-    void loop()
-    {
+  private:
+    void loop() {
         while (!_stop.load()) {
 
             const socket_t listenFd = _listenFd;
-            if (!socket_valid(listenFd)) break;
+            if (!socket_valid(listenFd))
+                break;
 
             fd_set rfds;
             FD_ZERO(&rfds);
             FD_SET(listenFd, &rfds);
 
             timeval tv{};
-            tv.tv_sec  = 0;
-            tv.tv_usec = 100'000; 
+            tv.tv_sec = 0;
+            tv.tv_usec = 100'000;
 
 #ifdef _WIN32
             const int ret = ::select(0, &rfds, nullptr, nullptr, &tv);
 #else
             const int ret = ::select(listenFd + 1, &rfds, nullptr, nullptr, &tv);
 #endif
-            if (ret <= 0) continue; 
+            if (ret <= 0)
+                continue;
 
             sockaddr_in client{};
-            socklen_t   clen = sizeof(client);
-            socket_t    cfd  = ::accept(listenFd,
-                                        reinterpret_cast<sockaddr*>(&client), &clen);
+            socklen_t clen = sizeof(client);
+            socket_t cfd = ::accept(listenFd, reinterpret_cast<sockaddr*>(&client), &clen);
             if (!socket_valid(cfd)) {
-                if (_stop.load()) break;
+                if (_stop.load())
+                    break;
                 continue;
             }
 
 #ifdef _WIN32
             DWORD tvMs = 2000;
-            ::setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO,
-                         reinterpret_cast<const char*>(&tvMs), sizeof(tvMs));
+            ::setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tvMs), sizeof(tvMs));
 #else
             timeval tvSock{};
             tvSock.tv_sec = 2;
             ::setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO, &tvSock, sizeof(tvSock));
 #endif
 
-            auto hr        = recvHeadersWithRemainder(cfd);
+            auto hr = recvHeadersWithRemainder(cfd);
             std::string remainder = hr.remainder;
 
-            std::int64_t contentLen   = 0;
-            bool         isChunked    = false;
-            bool         expect100    = false;
+            std::int64_t contentLen = 0;
+            bool isChunked = false;
+            bool expect100 = false;
 
             _captured = parseHeadersOnly(hr.headers, contentLen, isChunked, expect100);
 
@@ -399,16 +433,15 @@ private:
             if (isChunked) {
                 _captured.body = recvChunkedBody(cfd, std::move(remainder));
             } else if (contentLen > 0) {
-                _captured.body = readBodyContentLength(
-                    cfd, std::move(remainder), static_cast<std::size_t>(contentLen));
+                _captured.body = readBodyContentLength(cfd, std::move(remainder), static_cast<std::size_t>(contentLen));
             } else {
                 _captured.body.clear();
             }
 
             // 4) Send response.
-            const std::string statusText =
-                (_responseStatus == 200) ? "OK" :
-                (_responseStatus == 500) ? "Internal Server Error" : "OK";
+            const std::string statusText = (_responseStatus == 200)   ? "OK"
+                                           : (_responseStatus == 500) ? "Internal Server Error"
+                                                                      : "OK";
 
             std::ostringstream oss;
             oss << "HTTP/1.1 " << _responseStatus << " " << statusText << "\r\n";
@@ -421,27 +454,25 @@ private:
             socket_close(cfd);
 
             _gotRequest.store(true);
-            return; 
+            return;
         }
     }
 
-    socket_t             _listenFd{ kInvalidSocket };
-    int                  _port{ 0 };
-    int                  _responseStatus{ 200 };
-    std::thread          _thread;
-    std::atomic<bool>    _stop{ false };
-    std::atomic<bool>    _gotRequest{ false };
-    CapturedRequest      _captured{};
+    socket_t _listenFd{kInvalidSocket};
+    int _port{0};
+    int _responseStatus{200};
+    std::thread _thread;
+    std::atomic<bool> _stop{false};
+    std::atomic<bool> _gotRequest{false};
+    CapturedRequest _captured{};
 
 #ifdef _WIN32
     std::optional<WsaGuard> _wsa{};
 #endif
 };
 
-static ClientConfig makeFrontendCfg(const std::string& baseUrlApiFrontend,
-                                    const std::string& clientKey,
-                                    const std::string& appName)
-{
+static ClientConfig makeFrontendCfg(const std::string& baseUrlApiFrontend, const std::string& clientKey,
+                                    const std::string& appName) {
     ClientConfig cfg(baseUrlApiFrontend, clientKey, appName);
     cfg.setTimeOutQuery(std::chrono::milliseconds(1200));
     cfg.setHeaderName("authorization");
@@ -454,18 +485,15 @@ static ClientConfig makeFrontendCfg(const std::string& baseUrlApiFrontend,
 // Tests
 // ===========================================================================
 
-TEST(MetricSenderTest, SendMetrics_SendsPostWithExpectedPathHeadersAndBody_On200)
-{
+TEST(MetricSenderTest, SendMetrics_SendsPostWithExpectedPathHeadersAndBody_On200) {
     MiniHttpServer server(200);
 
-    const std::string cfgUrl =
-        "http://127.0.0.1:" + std::to_string(server.port()) + "/api/frontend";
+    const std::string cfgUrl = "http://127.0.0.1:" + std::to_string(server.port()) + "/api/frontend";
 
     auto cfg = makeFrontendCfg(cfgUrl, "my-client-key", "unleash-demo2");
     MetricSender sender(cfg);
 
-    const std::string body =
-        R"({"bucket":{"start":"x","stop":"y","toggles":{}},"appName":"a","instanceId":"i"})";
+    const std::string body = R"({"bucket":{"start":"x","stop":"y","toggles":{}},"appName":"a","instanceId":"i"})";
     auto res = sender.sendMetrics(body);
 
     EXPECT_EQ(res.status, 200);
@@ -481,7 +509,7 @@ TEST(MetricSenderTest, SendMetrics_SendsPostWithExpectedPathHeadersAndBody_On200
         std::string method, path, ver;
         iss >> method >> path >> ver;
         EXPECT_EQ(method, "POST");
-        EXPECT_EQ(path,   "/api/frontend/client/metrics");
+        EXPECT_EQ(path, "/api/frontend/client/metrics");
     }
 
     EXPECT_EQ(req.body, body);
@@ -505,12 +533,10 @@ TEST(MetricSenderTest, SendMetrics_SendsPostWithExpectedPathHeadersAndBody_On200
     ASSERT_TRUE(req.headersLower.count("user-agent"));
 }
 
-TEST(MetricSenderTest, SendMetrics_On500SetsStatusAndError)
-{
+TEST(MetricSenderTest, SendMetrics_On500SetsStatusAndError) {
     MiniHttpServer server(500);
 
-    const std::string cfgUrl =
-        "http://127.0.0.1:" + std::to_string(server.port()) + "/api/frontend";
+    const std::string cfgUrl = "http://127.0.0.1:" + std::to_string(server.port()) + "/api/frontend";
 
     auto cfg = makeFrontendCfg(cfgUrl, "key", "app");
     MetricSender sender(cfg);
@@ -522,8 +548,7 @@ TEST(MetricSenderTest, SendMetrics_On500SetsStatusAndError)
     EXPECT_TRUE(contains(*res.error, "HTTP error status=500"));
 }
 
-TEST(MetricSenderTest, SendMetrics_WhenConnectionRefusedReturnsError)
-{
+TEST(MetricSenderTest, SendMetrics_WhenConnectionRefusedReturnsError) {
     auto cfg = makeFrontendCfg("http://127.0.0.1:1/api/frontend", "key", "app");
     MetricSender sender(cfg);
 

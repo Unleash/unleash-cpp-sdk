@@ -10,30 +10,27 @@
 
 using namespace unleash;
 
-TEST(FlagStore, StartsNotReady)
-{
+TEST(FlagStore, StartsNotReady) {
     FlagStore store;
 
     EXPECT_FALSE(store.isReady());
 }
 
-TEST(FlagStore, HasNonNullSnapshotOnConstruction)
-{
+TEST(FlagStore, HasNonNullSnapshotOnConstruction) {
     FlagStore store;
 
     auto snap = store.snapshot();
     ASSERT_NE(snap, nullptr);
 }
 
-TEST(FlagStore, ReplaceSetsReadyAndSwapsSnapshotAtomically)
-{
+TEST(FlagStore, ReplaceSetsReadyAndSwapsSnapshotAtomically) {
     FlagStore store;
 
     auto before = store.snapshot();
     ASSERT_NE(before, nullptr);
     EXPECT_FALSE(store.isReady());
 
-    auto newSnap = std::make_shared<const ToggleSet>(); 
+    auto newSnap = std::make_shared<const ToggleSet>();
     store.replace(newSnap);
 
     EXPECT_TRUE(store.isReady());
@@ -46,8 +43,7 @@ TEST(FlagStore, ReplaceSetsReadyAndSwapsSnapshotAtomically)
     EXPECT_NE(after.get(), before.get());
 }
 
-TEST(FlagStore, ReplaceIgnoresNullSnapshotAndDoesNotChangeState)
-{
+TEST(FlagStore, ReplaceIgnoresNullSnapshotAndDoesNotChangeState) {
     FlagStore store;
 
     auto before = store.snapshot();
@@ -60,8 +56,7 @@ TEST(FlagStore, ReplaceIgnoresNullSnapshotAndDoesNotChangeState)
     EXPECT_EQ(store.isReady(), readyBefore);
 }
 
-TEST(FlagStore, ConcurrentReadersDoNotCrashDuringReplace)
-{
+TEST(FlagStore, ConcurrentReadersDoNotCrashDuringReplace) {
     FlagStore store;
 
     constexpr int kReaders = 8;
@@ -85,7 +80,8 @@ TEST(FlagStore, ConcurrentReadersDoNotCrashDuringReplace)
 
             while (!stop.load(std::memory_order_relaxed)) {
                 auto s = store.snapshot();
-                if (s) reads.fetch_add(1, std::memory_order_relaxed);
+                if (s)
+                    reads.fetch_add(1, std::memory_order_relaxed);
             }
         });
     }
@@ -102,14 +98,16 @@ TEST(FlagStore, ConcurrentReadersDoNotCrashDuringReplace)
     std::thread writer([&]() {
         for (int i = 0; i < 5000; ++i) {
             store.replace(std::make_shared<const ToggleSet>());
-            if ((i % 50) == 0) std::this_thread::yield();
+            if ((i % 50) == 0)
+                std::this_thread::yield();
         }
     });
 
     writer.join();
 
     stop.store(true, std::memory_order_relaxed);
-    for (auto& t : threads) t.join();
+    for (auto& t : threads)
+        t.join();
 
     EXPECT_TRUE(store.isReady());
     EXPECT_GT(reads.load(std::memory_order_relaxed), 0);

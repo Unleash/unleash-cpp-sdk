@@ -3,27 +3,24 @@
 #include <cctype>
 #include <algorithm>
 
-
-
-namespace unleash 
-{
+namespace unleash {
 
 namespace {
 
-    struct CurlGlobalInit {
-        CurlGlobalInit() { 
-            curl_global_init(CURL_GLOBAL_DEFAULT); 
-        }
-        ~CurlGlobalInit() { 
-            curl_global_cleanup(); 
-        }
-    };
-    
-    void ensureCurlInit() {
-        static CurlGlobalInit init;
+struct CurlGlobalInit {
+    CurlGlobalInit() {
+        curl_global_init(CURL_GLOBAL_DEFAULT);
     }
+    ~CurlGlobalInit() {
+        curl_global_cleanup();
+    }
+};
 
+void ensureCurlInit() {
+    static CurlGlobalInit init;
 }
+
+} // namespace
 
 HttpClient::HttpClient() {
     ensureCurlInit();
@@ -33,25 +30,22 @@ HttpClient::~HttpClient() {
     // Cleanup handled by singleton
 }
 
-std::unique_ptr<IComResponse> HttpClient::request(const IComRequest& p_req, CancelToken* p_cancel)
-{
+std::unique_ptr<IComResponse> HttpClient::request(const IComRequest& p_req, CancelToken* p_cancel) {
     // Use dynamic_cast directly - it checks type compatibility
     auto const* httpReq = dynamic_cast<const HttpRequest*>(&p_req);
     if (!httpReq) {
-        auto err = std::make_unique<ErrorResponse>(
-            ComErrorEnum::TypeMismatch,
-            "The request is not an HttpRequest type.");
+        auto err =
+            std::make_unique<ErrorResponse>(ComErrorEnum::TypeMismatch, "The request is not an HttpRequest type.");
         return err;
     }
-    
+
     auto httpResp = std::make_unique<HttpResponse>();
     requestHttp(*httpReq, *httpResp, p_cancel);
 
     return httpResp;
 }
 
-void HttpClient::requestHttp(const HttpRequest& p_req, HttpResponse& p_resp, CancelToken* p_cancel)
-{
+void HttpClient::requestHttp(const HttpRequest& p_req, HttpResponse& p_resp, CancelToken* p_cancel) {
     CurlHandle curlHandle;
     if (!curlHandle.valid()) {
         p_resp.status = -1;
@@ -73,7 +67,7 @@ void HttpClient::requestHttp(const HttpRequest& p_req, HttpResponse& p_resp, Can
     } else {
         curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
     }
-    
+
     // Set timeout
     if (p_req.timeoutMs > 0) {
         curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, p_req.timeoutMs);
@@ -106,7 +100,7 @@ void HttpClient::requestHttp(const HttpRequest& p_req, HttpResponse& p_resp, Can
 
     // Perform the curl operation
     CURLcode code = curl_easy_perform(curl);
-    
+
     if (code == CURLE_OK) {
         long statusCode = 0;
         if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode) == CURLE_OK) {
@@ -119,7 +113,6 @@ void HttpClient::requestHttp(const HttpRequest& p_req, HttpResponse& p_resp, Can
         p_resp.status = -1;
         p_resp.errorMessage = curl_easy_strerror(code);
     }
-
 }
 
 size_t HttpClient::writeCb(char* ptr, size_t size, size_t nmemb, void* userdata) {
@@ -141,10 +134,9 @@ size_t HttpClient::headerCb(char* buffer, size_t size, size_t nitems, void* user
 
         // Trim whitespace efficiently
         val = trimString(val, " \t\r\n");
-        
+
         // Convert key to lowercase
-        std::transform(key.begin(), key.end(), key.begin(),
-                      [](unsigned char c) { return std::tolower(c); });
+        std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
 
         if (!key.empty() && !val.empty()) {
             (*headers)[key] = val;
@@ -162,7 +154,7 @@ int HttpClient::xferInfoCb(void* clientp, curl_off_t, curl_off_t, curl_off_t, cu
 std::string HttpClient::trimString(const std::string& str, const char* whitespace) {
     const size_t start = str.find_first_not_of(whitespace);
     if (start == std::string::npos) {
-        return "";  // String is all whitespace
+        return ""; // String is all whitespace
     }
 
     const size_t end = str.find_last_not_of(whitespace);

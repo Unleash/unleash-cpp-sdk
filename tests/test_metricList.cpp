@@ -6,14 +6,12 @@
 
 using namespace unleash;
 
-TEST(MetricListTest, DefaultConstructedIsEmpty)
-{
+TEST(MetricListTest, DefaultConstructedIsEmpty) {
     MetricList ml;
     EXPECT_TRUE(ml.getList().empty());
 }
 
-TEST(MetricListTest, AddMetricData_FirstInsertCreatesToggleAndCountsFirstEvent)
-{
+TEST(MetricListTest, AddMetricData_FirstInsertCreatesToggleAndCountsFirstEvent) {
     MetricList ml;
 
     ml.addVariantMetricData("flagA", true, "variant1");
@@ -34,8 +32,7 @@ TEST(MetricListTest, AddMetricData_FirstInsertCreatesToggleAndCountsFirstEvent)
     EXPECT_EQ(stats.at("variant1"), 1u);
 }
 
-TEST(MetricListTest, AddMetricData_SecondCallUpdatesExistingToggle)
-{
+TEST(MetricListTest, AddMetricData_SecondCallUpdatesExistingToggle) {
     MetricList ml;
 
     ml.addVariantMetricData("flagA", true, "variant1");
@@ -51,27 +48,25 @@ TEST(MetricListTest, AddMetricData_SecondCallUpdatesExistingToggle)
     ASSERT_NE(it, m.end());
 
     EXPECT_EQ(it->second.getToggleName(), "flagA");
-    EXPECT_EQ(it->second.getYesCount(), 2u); 
-    EXPECT_EQ(it->second.getNoCount(), 2u);  
+    EXPECT_EQ(it->second.getYesCount(), 2u);
+    EXPECT_EQ(it->second.getNoCount(), 2u);
 
     const auto& stats = it->second.getVariantStats();
     ASSERT_EQ(stats.size(), 2u);
-    EXPECT_EQ(stats.at("variant1"), 3u); 
-    EXPECT_EQ(stats.at("variant2"), 1u); 
+    EXPECT_EQ(stats.at("variant1"), 3u);
+    EXPECT_EQ(stats.at("variant2"), 1u);
 }
 
-TEST(MetricListTest, AddMetricData_MultipleTogglesAreTrackedIndependently)
-{
+TEST(MetricListTest, AddMetricData_MultipleTogglesAreTrackedIndependently) {
     MetricList ml;
 
-    ml.addVariantMetricData("flagA", true, "v1" );
+    ml.addVariantMetricData("flagA", true, "v1");
     ml.addVariantMetricData("flagB", false, "blue");
     ml.addVariantMetricData("flagB", true, "blue");
     ml.addVariantMetricData("flagA", false, "v2");
 
     const auto& m = ml.getList();
     ASSERT_EQ(m.size(), 2u);
-
 
     {
         auto it = m.find("flagA");
