@@ -122,7 +122,7 @@ Header: `include/unleash/Configuration/clientConfig.hpp`
   - `setHeaderName(...)` (default: `"authorization"`)
   - `setCustomHeaders(...)`
   - `setUsePostRequests(bool)` (for feature fetch requests)
-  - `setTimeOutQuery(milliseconds)`
+  - `setTimeOutQueryMS(milliseconds)`
 - Impression:
   - `setImpressionDataAll(bool)` (force all flags to emit impression events)
 - Identity:
@@ -330,7 +330,7 @@ int main() {
     const std::string environment = "development";
 
     unleash::ClientConfig config(url, clientKey, appName);
-    config.setTimeOutQuery(std::chrono::milliseconds(5000))
+    config.setTimeOutQueryMS(std::chrono::milliseconds(5000))
           .setRefreshInterval(seconds(5))
           .setMetricsInterval(seconds(10))
           .setMetricsIntervalInitial(seconds(5))

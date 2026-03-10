@@ -38,11 +38,11 @@ TEST(ClientConfig, DefaultRefreshAndMetricsMatchExpectedBehavior) {
 
     ClientConfig cfg(url, key, appName);
 
-    EXPECT_EQ(cfg.refreshInterval().count(), 0);
-    EXPECT_FALSE(cfg.isRefreshEnabled());
+    EXPECT_EQ(cfg.refreshInterval().count(), 15);
+    EXPECT_TRUE(cfg.isRefreshEnabled());
 
-    EXPECT_EQ(cfg.metricsInterval().count(), 0);
-    EXPECT_FALSE(cfg.isMetricsEnabled());
+    EXPECT_EQ(cfg.metricsInterval().count(), 60);
+    EXPECT_TRUE(cfg.isMetricsEnabled());
 }
 
 TEST(ClientConfig, RefreshEnabledRespectsDisableRefreshAndZeroInterval) {
@@ -52,10 +52,10 @@ TEST(ClientConfig, RefreshEnabledRespectsDisableRefreshAndZeroInterval) {
 
     ClientConfig cfg(url, key, appName);
 
-    EXPECT_FALSE(cfg.isRefreshEnabled());
-
-    cfg.setRefreshInterval(utils::seconds(5));
     EXPECT_TRUE(cfg.isRefreshEnabled());
+
+    cfg.setRefreshInterval(utils::seconds(0));
+    EXPECT_FALSE(cfg.isRefreshEnabled());
 }
 
 TEST(ClientConfig, MetricsEnabledRespectsDisableMetricsAndZeroInterval) {
@@ -65,10 +65,10 @@ TEST(ClientConfig, MetricsEnabledRespectsDisableMetricsAndZeroInterval) {
 
     ClientConfig cfg(url, key, appName);
 
-    EXPECT_FALSE(cfg.isMetricsEnabled());
-
-    cfg.setMetricsInterval(utils::seconds(5));
     EXPECT_TRUE(cfg.isMetricsEnabled());
+
+    cfg.setMetricsInterval(utils::seconds(0));
+    EXPECT_FALSE(cfg.isMetricsEnabled());
 }
 
 TEST(ClientConfig, HeaderAndCustomHeadersDefaultsAndSetters) {

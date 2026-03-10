@@ -71,7 +71,7 @@ ClientConfig& ClientConfig::setUsePostRequests(bool v) {
     return *this;
 }
 
-ClientConfig& ClientConfig::setTimeOutQuery(utils::mSeconds m) {
+ClientConfig& ClientConfig::setTimeOutQueryMS(utils::mSeconds m) {
     _timeOutQueryMS = m;
     return *this;
 }
@@ -139,7 +139,7 @@ bool ClientConfig::usePostRequests() const {
     return _usePostRequests;
 }
 
-utils::mSeconds ClientConfig::timeOutQuery() const {
+utils::mSeconds ClientConfig::timeOutQueryMS() const {
     return _timeOutQueryMS;
 }
 

@@ -15,7 +15,7 @@ void ToggleFetcher::makeFrontendRequest(const ClientConfig& p_config) {
     _baseUrl = p_config.url();
     _httpRequest.url = _baseUrl;
     _httpRequest.usePOSTrequests = p_config.usePostRequests();
-    _httpRequest.timeoutMs = static_cast<long>(p_config.timeOutQuery().count());
+    _httpRequest.timeoutMs = static_cast<long>(p_config.timeOutQueryMS().count());
     // Fill headers similar to JS parseHeaders
     _httpRequest.headers.clear();
     _httpRequest.headers["accept"] = "application/json";
