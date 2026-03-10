@@ -502,7 +502,7 @@ TEST(ToggleFetcher, GetRequestIncludesContextAsQueryParams) {
     EXPECT_NE(line.find("sessionId=sess-1"), std::string::npos);
     EXPECT_NE(line.find("userId=user-1"), std::string::npos);
     EXPECT_NE(line.find("remoteAddress=10.0.0.1"), std::string::npos);
-    EXPECT_NE(line.find("properties.tenant=acmé"), std::string::npos);
+    EXPECT_NE(line.find("properties.tenant=acm%C3%A9"), std::string::npos);
     EXPECT_NE(line.find("properties.plan=pro"), std::string::npos);
     EXPECT_NE(line.find("properties.note=hello%20world"), std::string::npos);
 }
