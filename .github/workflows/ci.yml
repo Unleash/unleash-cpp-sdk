@@ -18,6 +18,11 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Format check
+        run: |
+          ./scripts/format.sh
+          git diff --exit-code
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -25,10 +30,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install conan
 
-      - name: Format check
-        run: |
-          ./scripts/format.sh
-          git diff --exit-code
+      - name: Configure Conan profile
+        run: conan profile detect --force
 
       - name: Configure (Conan + CMake)
         run: |
