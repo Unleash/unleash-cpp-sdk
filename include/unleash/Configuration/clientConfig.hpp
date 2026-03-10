@@ -38,7 +38,7 @@ class ClientConfig final {
     ClientConfig& setCustomHeaders(std::map<std::string, std::string> headers);
     ClientConfig& setImpressionDataAll(bool v);
     ClientConfig& setUsePostRequests(bool v);
-    ClientConfig& setTimeOutQuery(utils::mSeconds m);
+    ClientConfig& setTimeOutQueryMS(utils::mSeconds m);
 
     ClientConfig& setStorageProvider(std::shared_ptr<IStorageProvider> provider);
 
@@ -57,7 +57,7 @@ class ClientConfig final {
     const std::map<std::string, std::string>& customHeaders() const;
     bool impressionDataAll() const;
     bool usePostRequests() const;
-    utils::mSeconds timeOutQuery() const;
+    utils::mSeconds timeOutQueryMS() const;
 
     bool isRefreshEnabled() const;
     bool isMetricsEnabled() const;

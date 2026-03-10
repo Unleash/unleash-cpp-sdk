@@ -474,7 +474,7 @@ class MiniHttpServer {
 static ClientConfig makeFrontendCfg(const std::string& baseUrlApiFrontend, const std::string& clientKey,
                                     const std::string& appName) {
     ClientConfig cfg(baseUrlApiFrontend, clientKey, appName);
-    cfg.setTimeOutQuery(std::chrono::milliseconds(1200));
+    cfg.setTimeOutQueryMS(std::chrono::milliseconds(1200));
     cfg.setHeaderName("authorization");
     return cfg;
 }

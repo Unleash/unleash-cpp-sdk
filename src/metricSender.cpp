@@ -54,7 +54,7 @@ MetricSender::MetricResult MetricSender::sendMetrics(const std::string& p_metric
 void MetricSender::initializeHttpRequest(const ClientConfig& p_config) {
     _httpRequest.url = p_config.url() + "/client/metrics";
     _httpRequest.usePOSTrequests = true;
-    _httpRequest.timeoutMs = static_cast<long>(p_config.timeOutQuery().count());
+    _httpRequest.timeoutMs = static_cast<long>(p_config.timeOutQueryMS().count());
     _httpRequest.headers.clear();
 
     _httpRequest.headers["accept"] = "application/json";
