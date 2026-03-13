@@ -92,7 +92,7 @@ std::string buildContextQuery(const Context& ctx) {
         if (k.empty() || v.empty())
             continue;
         // Encode custom properties using properties.<key>
-        add("properties." + k, v);
+        add("properties[" + k + "]", v);
     }
 
     return query;
