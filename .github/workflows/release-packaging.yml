@@ -1,0 +1,116 @@
+name: Release Packaging
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package-release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag '$TAG' is not a valid semver-style release tag"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify GitHub release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ steps.version.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            >/dev/null
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          python -m pip install --upgrade pip
+          python -m pip install conan
+
+      - name: Configure Conan profile
+        shell: bash
+        run: |
+          conan profile detect --force
+
+      - name: Configure (Conan + CMake)
+        shell: bash
+        run: |
+          conan install . -of build -s build_type=Release --build=missing
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUNLEASH_BUILD_TESTS=ON
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --target unleash_tests --config Release
+
+      - name: Test
+        shell: bash
+        run: |
+          ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Create source archives
+        id: archives
+        shell: bash
+        run: |
+          PROJECT_NAME="unleash-cpp-sdk"
+          ARCHIVE_BASENAME="${PROJECT_NAME}-${{ steps.version.outputs.tag }}"
+          TAR_NAME="${ARCHIVE_BASENAME}.tar.gz"
+          ZIP_NAME="${ARCHIVE_BASENAME}.zip"
+
+          git archive \
+            --worktree-attributes \
+            --format=tar.gz \
+            --prefix="${ARCHIVE_BASENAME}/" \
+            --output="$TAR_NAME" \
+            HEAD
+
+          git archive \
+            --worktree-attributes \
+            --format=zip \
+            --prefix="${ARCHIVE_BASENAME}/" \
+            --output="$ZIP_NAME" \
+            HEAD
+
+          echo "tar_name=$TAR_NAME" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release upload "${{ steps.version.outputs.tag }}" \
+            "${{ steps.archives.outputs.tar_name }}" \
+            "${{ steps.archives.outputs.zip_name }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
