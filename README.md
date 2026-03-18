@@ -259,9 +259,48 @@ To persist flags across restarts, provide your own implementation via `ClientCon
 
 ## Build and test
 
+## Examples
+
+This repository now includes runnable examples in `examples/` that link directly to the `unleash_sdk` target.
+
+- `live_example`: live polling example using environment variables.
+
+### Build examples
+
+Examples are built by default. To disable them, configure with:
+
+```bash
+cmake -S . -B build -DUNLEASH_BUILD_EXAMPLES=OFF
+```
+
+Build all targets:
+
+```bash
+cmake --build build
+```
+
+### Run example: bootstrap
+
+```bash
+./build/examples/unleash_example_bootstrap
+```
+
+### Run example: live Unleash connection
+
+Set required environment variables and run:
+
+```bash
+export UNLEASH_URL="https://your-unleash-instance/api/frontend"
+export UNLEASH_API_KEY="your-client-key"
+export UNLEASH_FEATURE_NAME="my-flag"   # optional
+./build/examples/live_example
+```
+
+The live example prints init/ready/update/error events and continuously prints flag/variant evaluation results once per second.
+
 ### Requirements:
 - C++17 compiler
-- python3 (necessary for venv and conan install) 
+- python3 (necessary for venv and conan install)
 - CMake >= 3.16
 - `nlohmann_json`
 - `libcurl`
@@ -284,22 +323,22 @@ To persist flags across restarts, provide your own implementation via `ClientCon
 
     ```bash
     conan profile detect --force
-    ``` 
+    ```
 4. Install dependencies with into build/release :
 
     ```bash
     conan install . -of=build/release -s build_type=Release --build=missing
-    ``` 
-5. Configure CMake using Conan toolchain: 
+    ```
+5. Configure CMake using Conan toolchain:
 
     ```bash
     cmake -S . -B build/release -G Ninja -DCMAKE_TOOLCHAIN_FILE=build/release/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DUNLEASH_BUILD_TESTS=ON
-    ``` 
-6. Build the sdk: 
+    ```
+6. Build the sdk:
     ```bash
     cmake --build build/release -j8 #You can adapt option -j8 to fit your machine (you can check number of thread on you machine using 'echo $(nproc)'
                                     #or build directly using: ' cmake --build build/release -j"$(nproc)" ')
-    ``` 
+    ```
 
 ### Run tests:
 ```bash

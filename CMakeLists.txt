@@ -33,6 +33,13 @@ target_link_libraries(unleash_sdk
     CURL::libcurl
 )
 
+# ---- Examples
+option(UNLEASH_BUILD_EXAMPLES "Build SDK examples" ON)
+
+if(UNLEASH_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
 # ---- Tests
 option(UNLEASH_BUILD_TESTS "Build unit tests" ON)
 
