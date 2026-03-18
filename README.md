@@ -292,7 +292,7 @@ Set required environment variables and run:
 
 ```bash
 export UNLEASH_URL="https://your-unleash-instance/api/frontend"
-export UNLEASH_CLIENT_KEY="your-client-key"
+export UNLEASH_API_KEY="your-client-key"
 export UNLEASH_FEATURE_NAME="my-flag"   # optional
 ./build/examples/live_example
 ```
