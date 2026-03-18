@@ -341,3 +341,131 @@ TEST(JsonCodecEncodeMetricsRequestBody, HandlesMixedYesNoWithNoVariants) {
     EXPECT_TRUE(flag["variants"].is_object());
     EXPECT_TRUE(flag["variants"].empty());
 }
+
+TEST(JsonCodecEncodeClientFeaturesResponse, ProducesTogglesArrayAtTopLevel) {
+    unleash::ToggleSet::Map m;
+    m.emplace("my-flag", unleash::Toggle{"my-flag", true, false});
+    unleash::ToggleSet ts{std::move(m)};
+
+    const std::string body = JsonCodec::encodeClientFeaturesResponse(ts);
+    json j = json::parse(body);
+
+    ASSERT_TRUE(j.is_object());
+    ASSERT_TRUE(j.contains("toggles"));
+    ASSERT_TRUE(j["toggles"].is_array());
+    EXPECT_EQ(j["toggles"].size(), 1u);
+}
+
+TEST(JsonCodecEncodeClientFeaturesResponse, EncodesEnabledAndImpressionDataFields) {
+    unleash::ToggleSet::Map m;
+    m.emplace("flag-a", unleash::Toggle{"flag-a", true, true});
+    m.emplace("flag-b", unleash::Toggle{"flag-b", false, false});
+    unleash::ToggleSet ts{std::move(m)};
+
+    const std::string body = JsonCodec::encodeClientFeaturesResponse(ts);
+    json j = json::parse(body);
+
+    // Build a lookup by name for order-independent assertions
+    // Simplifies the test a little and I think it's okay for the domain
+    // to allow these to be unordered since this is a internal lookup structure
+    std::unordered_map<std::string, json> byName;
+    for (const auto& item : j["toggles"])
+        byName[item["name"].get<std::string>()] = item;
+
+    ASSERT_EQ(byName.size(), 2u);
+
+    EXPECT_TRUE(byName["flag-a"]["enabled"].get<bool>());
+    EXPECT_TRUE(byName["flag-a"]["impressionData"].get<bool>());
+
+    EXPECT_FALSE(byName["flag-b"]["enabled"].get<bool>());
+    EXPECT_FALSE(byName["flag-b"]["impressionData"].get<bool>());
+}
+
+TEST(JsonCodecEncodeClientFeaturesResponse, EncodesVariantWithPayload) {
+    unleash::Variant v{"control", true, unleash::Variant::Payload{"string", "hello"}};
+    unleash::ToggleSet::Map m;
+    m.emplace("flag-v", unleash::Toggle{"flag-v", true, false, std::move(v)});
+    unleash::ToggleSet ts{std::move(m)};
+
+    const std::string body = JsonCodec::encodeClientFeaturesResponse(ts);
+    json j = json::parse(body);
+
+    const json& t = j["toggles"][0];
+    ASSERT_TRUE(t.contains("variant"));
+    const json& vj = t["variant"];
+
+    EXPECT_EQ(vj["name"].get<std::string>(), "control");
+    EXPECT_TRUE(vj["enabled"].get<bool>());
+    ASSERT_TRUE(vj.contains("payload"));
+    EXPECT_EQ(vj["payload"]["type"].get<std::string>(), "string");
+    EXPECT_EQ(vj["payload"]["value"].get<std::string>(), "hello");
+}
+
+TEST(JsonCodecEncodeClientFeaturesResponse, OmitsPayloadFieldWhenVariantHasNone) {
+    unleash::Variant v{"on", true};
+    unleash::ToggleSet::Map m;
+    m.emplace("flag-nopayload", unleash::Toggle{"flag-nopayload", true, false, std::move(v)});
+    unleash::ToggleSet ts{std::move(m)};
+
+    const std::string body = JsonCodec::encodeClientFeaturesResponse(ts);
+    json j = json::parse(body);
+
+    const json& vj = j["toggles"][0]["variant"];
+    EXPECT_FALSE(vj.contains("payload"));
+}
+
+TEST(JsonCodecEncodeClientFeaturesResponse, EmptyToggleSetProducesEmptyArray) {
+    unleash::ToggleSet ts;
+
+    const std::string body = JsonCodec::encodeClientFeaturesResponse(ts);
+    json j = json::parse(body);
+
+    ASSERT_TRUE(j.contains("toggles"));
+    EXPECT_TRUE(j["toggles"].is_array());
+    EXPECT_TRUE(j["toggles"].empty());
+}
+
+TEST(JsonCodecRoundTrip, DecodeEncodeDecodeProducesSameToggleSet) {
+    const std::string original = R"json({
+      "toggles": [
+        {
+          "name": "flag-full",
+          "enabled": true,
+          "impressionData": true,
+          "variant": {
+            "name": "variant-a",
+            "enabled": true,
+            "payload": { "type": "string", "value": "abc" }
+          }
+        },
+        {
+          "name": "flag-no-payload",
+          "enabled": true,
+          "impressionData": false,
+          "variant": { "name": "on", "enabled": true }
+        },
+        {
+          "name": "flag-disabled",
+          "enabled": false,
+          "impressionData": false,
+          "variant": { "name": "disabled", "enabled": false }
+        }
+      ]
+    })json";
+
+    unleash::ToggleSet first = JsonCodec::decodeClientFeaturesResponse(original);
+    const std::string encoded = JsonCodec::encodeClientFeaturesResponse(first);
+    unleash::ToggleSet second = JsonCodec::decodeClientFeaturesResponse(encoded);
+
+    ASSERT_EQ(first.size(), second.size());
+
+    for (const auto& [name, toggle] : first.toggles()) {
+        ASSERT_TRUE(second.contains(name)) << "missing toggle: " << name;
+        EXPECT_EQ(second.isEnabled(name), toggle.enabled()) << name;
+        EXPECT_EQ(second.impressionData(name), toggle.impressionData()) << name;
+
+        const unleash::Variant v1 = first.getVariant(name);
+        const unleash::Variant v2 = second.getVariant(name);
+        EXPECT_EQ(v1, v2) << "variant mismatch for: " << name;
+    }
+}
