@@ -263,7 +263,6 @@ To persist flags across restarts, provide your own implementation via `ClientCon
 
 This repository now includes runnable examples in `examples/` that link directly to the `unleash_sdk` target.
 
-- `unleash_example_bootstrap`: offline/local bootstrap example (no network polling).
 - `live_example`: live polling example using environment variables.
 
 ### Build examples
