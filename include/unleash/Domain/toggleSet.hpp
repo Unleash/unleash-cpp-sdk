@@ -22,6 +22,8 @@ class ToggleSet final {
 
     std::size_t size() const;
 
+    const Map& toggles() const;
+
     bool contains(const std::string& p_name) const;
 
     bool isEnabled(const std::string& p_name) const;

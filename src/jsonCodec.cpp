@@ -89,6 +89,34 @@ ToggleSet JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText) {
     return ToggleSet(std::move(vToggles));
 }
 
+std::string JsonCodec::encodeClientFeaturesResponse(const ToggleSet& toggleSet) {
+    json arr = json::array();
+    for (const auto& [name, toggle] : toggleSet.toggles()) {
+        json t;
+        t["name"] = toggle.name();
+        t["enabled"] = toggle.enabled();
+        t["impressionData"] = toggle.impressionData();
+
+        const Variant& v = toggle.variant();
+        json vj;
+        vj["name"] = v.name();
+        vj["enabled"] = v.enabled();
+        const auto& payload = v.payload();
+        if (payload.has_value() && !payload->empty()) {
+            json pj;
+            pj["type"] = payload->type();
+            pj["value"] = payload->value();
+            vj["payload"] = std::move(pj);
+        }
+        t["variant"] = std::move(vj);
+
+        arr.push_back(std::move(t));
+    }
+    json root;
+    root["toggles"] = std::move(arr);
+    return root.dump();
+}
+
 // Domain -> request body
 std::string JsonCodec::encodeContextRequestBody(const Context& ctx) {
     json j = nlohmann::json::object();

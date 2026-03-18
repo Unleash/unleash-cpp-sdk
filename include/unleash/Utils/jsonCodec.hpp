@@ -16,6 +16,8 @@ class JsonCodec {
 
     static ToggleSet decodeClientFeaturesResponse(const std::string& jsonText);
 
+    static std::string encodeClientFeaturesResponse(const ToggleSet& toggleSet);
+
     static std::string encodeContextRequestBody(const Context& ctx);
 
     static std::string encodeMetricsRequestBody(const MetricList& p_metricList, const std::string& p_start,

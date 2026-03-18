@@ -23,6 +23,10 @@ std::size_t ToggleSet::size() const {
     return _toggles.size();
 }
 
+const ToggleSet::Map& ToggleSet::toggles() const {
+    return _toggles;
+}
+
 bool ToggleSet::contains(const std::string& p_name) const {
     return _toggles.find(p_name) != _toggles.end();
 }
