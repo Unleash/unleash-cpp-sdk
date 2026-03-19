@@ -1,12 +1,13 @@
 #pragma once
 
-#include <string>
 #include <optional>
-#include <iostream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
 #include "unleash/Domain/context.hpp"
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Metrics/metricList.hpp"
-#include <nlohmann/json.hpp>
 
 namespace unleash {
 
@@ -14,7 +15,7 @@ class JsonCodec {
   public:
     using json = nlohmann::json;
 
-    static ToggleSet decodeClientFeaturesResponse(const std::string& jsonText);
+    static std::optional<ToggleSet> decodeClientFeaturesResponse(const std::string& jsonText);
 
     static std::string encodeClientFeaturesResponse(const ToggleSet& toggleSet);
 

@@ -56,7 +56,7 @@ Main internal modules:
 - `IComClient`: transport-agnostic client interface (`request()`).
 - `ErrorResponse`: typed error response for transport/client mismatches.
 - `EventHandler`: async callback queue and dispatch thread.
-- `JsonCodec`: JSON encode/decode helper for context, toggles, metrics.
+- `JsonCodec` (internal): JSON encode/decode helper for context, toggles, metrics.
 
 Enums used across the SDK:
 - `SdkState`
