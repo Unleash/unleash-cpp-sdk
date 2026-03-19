@@ -55,6 +55,11 @@ if(UNLEASH_BUILD_TESTS)
 
   add_executable(unleash_tests ${UNLEASH_TEST_SOURCES})
 
+  target_include_directories(unleash_tests
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+  )
+
   target_link_libraries(unleash_tests
     PRIVATE
       unleash_sdk

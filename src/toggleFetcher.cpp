@@ -1,6 +1,6 @@
 #include "unleash/Fetcher/toggleFetcher.hpp"
 #include "unleash/Utils/utils.hpp"
-#include "unleash/Utils/jsonCodec.hpp"
+#include "internal/jsonCodec.hpp"
 #include <cctype>
 #include <sstream>
 #include <iomanip>
@@ -146,15 +146,14 @@ ToggleFetcher::FetchResult ToggleFetcher::fetch(const Context& p_ctx) {
         return result;
     }
 
-    ToggleSet toggleSet;
     if (httpResponse->status >= utils::httpStatusOkLower && httpResponse->status < utils::httpStatusOkUpper) {
-        try {
-            auto toggleSet = JsonCodec::decodeClientFeaturesResponse(httpResponse->body);
-            if (toggleSet.size())
-                result.toggles = std::move(toggleSet);
-        } catch (const std::exception& e) {
-            result.error = std::string("Failed to decode toggles JSON: ") + e.what();
+        auto toggleSet = JsonCodec::decodeClientFeaturesResponse(httpResponse->body);
+        if (!toggleSet.has_value()) {
+            result.error = "Failed to decode toggles JSON: invalid payload";
             return result;
+        }
+        if (toggleSet->size()) {
+            result.toggles = std::move(toggleSet.value());
         }
         auto it = httpResponse->headers.find("etag");
         if (it != httpResponse->headers.end() && !it->second.empty()) {

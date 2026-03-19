@@ -1,92 +1,121 @@
-#include "unleash/Utils/jsonCodec.hpp"
+#include "internal/jsonCodec.hpp"
+
+#include "internal/expected.hpp"
 
 namespace unleash {
 
-ToggleSet JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText) {
-    json root = json::parse(jsonText, nullptr, false);
+namespace {
+
+internal::Expected<Toggle, std::string> decodeToggle(const JsonCodec::json& item) {
+    if (!item.is_object()) {
+        return internal::unexpected(std::string("toggle entry is not an object"));
+    }
+    const JsonCodec::json& obj = item;
+
+    auto itName = obj.find("name");
+    if (itName == obj.end() || !itName->is_string()) {
+        return internal::unexpected(std::string("toggle.name is missing or not a string"));
+    }
+    std::string toggleName = itName->get<std::string>();
+
+    auto itEnabled = obj.find("enabled");
+    if (itEnabled == obj.end() || !itEnabled->is_boolean()) {
+        return internal::unexpected(std::string("toggle.enabled is missing or not a boolean"));
+    }
+    const bool toggleEnabled = itEnabled->get<bool>();
+
+    bool toggleImpression = false;
+    auto itImpr = obj.find("impressionData");
+    if (itImpr != obj.end()) {
+        if (!itImpr->is_boolean()) {
+            return internal::unexpected(std::string("toggle.impressionData is not a boolean"));
+        }
+        toggleImpression = itImpr->get<bool>();
+    }
+
+    if (!toggleEnabled) {
+        return Toggle{std::move(toggleName), false, toggleImpression};
+    }
+
+    auto itVariant = obj.find("variant");
+    if (itVariant == obj.end()) {
+        return Toggle{std::move(toggleName), true, toggleImpression};
+    }
+    if (!itVariant->is_object()) {
+        return internal::unexpected(std::string("toggle.variant is not an object"));
+    }
+    const JsonCodec::json& vObj = *itVariant;
+
+    auto itVName = vObj.find("name");
+    auto itVEnabled = vObj.find("enabled");
+    if (itVName == vObj.end() || !itVName->is_string() || itVName->get<std::string>().empty() ||
+        itVEnabled == vObj.end() || !itVEnabled->is_boolean() || !itVEnabled->get<bool>()) {
+        return Toggle{std::move(toggleName), toggleEnabled, toggleImpression};
+    }
+
+    auto itPayload = vObj.find("payload");
+    if (itPayload == vObj.end()) {
+        return Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
+                      Variant{itVName->get<std::string>(), itVEnabled->get<bool>()}};
+    }
+    if (!itPayload->is_object()) {
+        return internal::unexpected(std::string("toggle.variant.payload is not an object"));
+    }
+    const JsonCodec::json& pObj = *itPayload;
+    auto itType = pObj.find("type");
+    auto itValue = pObj.find("value");
+    if (itType == pObj.end() || !itType->is_string() || itType->get<std::string>().empty() || itValue == pObj.end() ||
+        !itValue->is_string()) {
+        return Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
+                      Variant{itVName->get<std::string>(), itVEnabled->get<bool>()}};
+    }
+
+    return Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
+                  Variant{itVName->get<std::string>(), itVEnabled->get<bool>(),
+                          Variant::Payload{itType->get<std::string>(), itValue->get<std::string>()}}};
+}
+
+internal::Expected<ToggleSet, std::string> decodeClientFeaturesResponseExpected(const std::string& jsonText) {
+    JsonCodec::json root = JsonCodec::json::parse(jsonText, nullptr, false);
     if (root.is_discarded()) {
-        std::cerr << "Received string is not a json..." << std::endl;
-        return ToggleSet();
+        return internal::unexpected(std::string("input is not valid JSON"));
     }
 
     auto itToggles = root.find("toggles");
     if (itToggles == root.end()) {
-        std::cout << "Received string doesn't contain \"toggles\" field" << std::endl;
-        return ToggleSet();
+        return internal::unexpected(std::string("missing toggles field"));
     }
     if (!itToggles->is_array()) {
-        std::cout << "The field \"toggles\" contained in the received string is not an array " << std::endl;
-        return ToggleSet();
+        return internal::unexpected(std::string("toggles field is not an array"));
     }
 
-    const json& toggles = *itToggles;
+    const JsonCodec::json& toggles = *itToggles;
 
     std::vector<Toggle> vToggles;
     vToggles.reserve(toggles.size());
 
+    std::size_t index = 0;
     for (const auto& item : toggles) {
-        if (!item.is_object()) {
-            // define a logging strategy here!
-            continue;
+        auto decodedToggle = decodeToggle(item);
+        if (!decodedToggle.has_value()) {
+            return internal::unexpected("invalid toggle at index " + std::to_string(index) + ": " +
+                                        decodedToggle.error());
         }
-        const json& obj = item;
-
-        // ---- name ----
-        auto itName = obj.find("name");
-        if (itName == obj.end() || !itName->is_string()) {
-            continue;
-        }
-        // Update from here:
-        std::string toggleName = itName->get<std::string>();
-
-        auto itEnabled = obj.find("enabled");
-        bool toggleEnabled = (itEnabled != obj.end() && itEnabled->is_boolean()) ? itEnabled->get<bool>() : false;
-
-        auto itImpr = obj.find("impressionData");
-        bool toggleImpression = (itImpr != obj.end() && itImpr->is_boolean()) ? itImpr->get<bool>() : false;
-
-        if (!toggleEnabled) {
-            vToggles.emplace_back(Toggle{std::move(toggleName), false, toggleImpression});
-            continue;
-        }
-
-        auto itVariant = obj.find("variant");
-        if (itVariant == obj.end() || !itVariant->is_object()) {
-            vToggles.emplace_back(Toggle{std::move(toggleName), toggleEnabled, toggleImpression});
-            continue;
-        }
-
-        const json& vObj = *itVariant;
-
-        auto itVName = vObj.find("name");
-        auto itVEnabled = vObj.find("enabled");
-        if (itVName == vObj.end() || !itVName->is_string() || itVName->get<std::string>().empty() ||
-            itVEnabled == vObj.end() || !itVEnabled->is_boolean() || !itVEnabled->get<bool>()) {
-            vToggles.emplace_back(Toggle{std::move(toggleName), toggleEnabled, toggleImpression});
-            continue;
-        }
-        auto itPayload = vObj.find("payload");
-        if (itPayload == vObj.end() || !itPayload->is_object()) {
-            vToggles.emplace_back(Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
-                                         Variant{itVName->get<std::string>(), itVEnabled->get<bool>()}});
-            continue;
-        }
-        const json& pObj = *itPayload;
-        auto itType = pObj.find("type");
-        auto itValue = pObj.find("value");
-        if (itType == pObj.end() || !itType->is_string() || itType->get<std::string>().empty() ||
-            itValue == pObj.end() || !itValue->is_string()) {
-            vToggles.emplace_back(Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
-                                         Variant{itVName->get<std::string>(), itVEnabled->get<bool>()}});
-            continue;
-        }
-        vToggles.emplace_back(
-            Toggle{std::move(toggleName), toggleEnabled, toggleImpression,
-                   Variant{itVName->get<std::string>(), itVEnabled->get<bool>(),
-                           Variant::Payload{itType->get<std::string>(), itValue->get<std::string>()}}});
+        vToggles.emplace_back(std::move(decodedToggle.value()));
+        ++index;
     }
 
     return ToggleSet(std::move(vToggles));
+}
+
+} // namespace
+
+std::optional<ToggleSet> JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText) {
+    auto decoded = decodeClientFeaturesResponseExpected(jsonText);
+    if (!decoded.has_value()) {
+        return std::nullopt;
+    }
+    return std::move(decoded.value());
 }
 
 std::string JsonCodec::encodeClientFeaturesResponse(const ToggleSet& toggleSet) {

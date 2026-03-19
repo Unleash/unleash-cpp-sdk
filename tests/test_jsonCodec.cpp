@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "unleash/Utils/jsonCodec.hpp"
+#include "internal/jsonCodec.hpp"
 #include "unleash/Domain/variant.hpp"
 #include "unleash/Domain/context.hpp"
 #include "unleash/Metrics/metricList.hpp"
@@ -44,14 +44,15 @@ TEST(JsonCodecDecodeClientFeaturesResponse, ParsesValidTogglesAndVariantsWithPay
     }
     )json";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
-    std::cout << "##########################################size is: " << set.size() << std::endl;
-    EXPECT_EQ(set.size(), 2u);
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    ASSERT_TRUE(set.has_value());
+    std::cout << "##########################################size is: " << set->size() << std::endl;
+    EXPECT_EQ(set->size(), 2u);
 
-    EXPECT_TRUE(set.contains("test-flag"));
-    EXPECT_TRUE(set.isEnabled("test-flag"));
+    EXPECT_TRUE(set->contains("test-flag"));
+    EXPECT_TRUE(set->isEnabled("test-flag"));
 
-    Variant v1 = set.getVariant("test-flag");
+    Variant v1 = set->getVariant("test-flag");
     EXPECT_EQ(v1.name(), "hello");
     EXPECT_TRUE(v1.enabled());
     EXPECT_TRUE(v1.hasPayload());
@@ -59,10 +60,10 @@ TEST(JsonCodecDecodeClientFeaturesResponse, ParsesValidTogglesAndVariantsWithPay
     EXPECT_EQ(v1.payload()->type(), "number");
     EXPECT_EQ(v1.payload()->value(), "1234");
 
-    EXPECT_TRUE(set.contains("test-json"));
-    EXPECT_TRUE(set.isEnabled("test-json"));
+    EXPECT_TRUE(set->contains("test-json"));
+    EXPECT_TRUE(set->isEnabled("test-json"));
 
-    Variant v2 = set.getVariant("test-json");
+    Variant v2 = set->getVariant("test-json");
     EXPECT_EQ(v2.name(), "hello");
     EXPECT_TRUE(v2.enabled());
     EXPECT_TRUE(v2.hasPayload());
@@ -89,13 +90,14 @@ TEST(JsonCodecDecodeClientFeaturesResponse, ToggleDisabledForcesDisabledVariant)
     }
     )json";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    ASSERT_TRUE(set.has_value());
 
-    EXPECT_EQ(set.size(), 1u);
-    EXPECT_TRUE(set.contains("flag-off"));
-    EXPECT_FALSE(set.isEnabled("flag-off"));
+    EXPECT_EQ(set->size(), 1u);
+    EXPECT_TRUE(set->contains("flag-off"));
+    EXPECT_FALSE(set->isEnabled("flag-off"));
 
-    Variant v = set.getVariant("flag-off");
+    Variant v = set->getVariant("flag-off");
     EXPECT_EQ(v, Variant::disabledFactory());
 }
 
@@ -112,30 +114,31 @@ TEST(JsonCodecDecodeClientFeaturesResponse, MissingVariantFallsBackToDisabledVar
     }
     )json";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    ASSERT_TRUE(set.has_value());
 
-    EXPECT_EQ(set.size(), 1u);
-    EXPECT_TRUE(set.contains("no-variant"));
-    EXPECT_TRUE(set.isEnabled("no-variant"));
+    EXPECT_EQ(set->size(), 1u);
+    EXPECT_TRUE(set->contains("no-variant"));
+    EXPECT_TRUE(set->isEnabled("no-variant"));
 
-    Variant v = set.getVariant("no-variant");
+    Variant v = set->getVariant("no-variant");
     EXPECT_EQ(v, Variant::disabledFactory());
 }
 
-TEST(JsonCodecDecodeClientFeaturesResponse, InvalidJsonReturnsEmptyToggleSet) {
+TEST(JsonCodecDecodeClientFeaturesResponse, InvalidJsonReturnsNoValue) {
     const std::string invalid = R"({ "toggles": [ )";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(invalid);
+    auto set = JsonCodec::decodeClientFeaturesResponse(invalid);
 
-    EXPECT_EQ(set.size(), 0u);
+    EXPECT_FALSE(set.has_value());
 }
 
-TEST(JsonCodecDecodeClientFeaturesResponse, MissingTogglesFieldReturnsEmptyToggleSet) {
+TEST(JsonCodecDecodeClientFeaturesResponse, MissingTogglesFieldReturnsNoValue) {
     const std::string jsonText = R"json({ "foo": 123 })json";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
 
-    EXPECT_EQ(set.size(), 0u);
+    EXPECT_FALSE(set.has_value());
 }
 
 TEST(JsonCodecDecodeClientFeaturesResponse, DuplicateToggleNamesFirstOneWins) {
@@ -148,11 +151,27 @@ TEST(JsonCodecDecodeClientFeaturesResponse, DuplicateToggleNamesFirstOneWins) {
     }
     )json";
 
-    ToggleSet set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+    ASSERT_TRUE(set.has_value());
 
-    EXPECT_TRUE(set.contains("dup"));
-    EXPECT_TRUE(set.isEnabled("dup"));
-    EXPECT_EQ(set.getVariant("dup").name(), "A");
+    EXPECT_TRUE(set->contains("dup"));
+    EXPECT_TRUE(set->isEnabled("dup"));
+    EXPECT_EQ(set->getVariant("dup").name(), "A");
+}
+
+TEST(JsonCodecDecodeClientFeaturesResponse, AnyInvalidToggleEntryReturnsNoValue) {
+    const std::string jsonText = R"json(
+    {
+      "toggles": [
+        { "name": "ok", "enabled": true, "variant": { "name": "A", "enabled": true } },
+        { "enabled": true, "variant": { "name": "B", "enabled": true } }
+      ]
+    }
+    )json";
+
+    auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
+
+    EXPECT_FALSE(set.has_value());
 }
 
 TEST(JsonCodecEncodeContextRequestBody, ProducesValidJsonWithContextRoot) {
@@ -453,19 +472,21 @@ TEST(JsonCodecRoundTrip, DecodeEncodeDecodeProducesSameToggleSet) {
       ]
     })json";
 
-    unleash::ToggleSet first = JsonCodec::decodeClientFeaturesResponse(original);
-    const std::string encoded = JsonCodec::encodeClientFeaturesResponse(first);
-    unleash::ToggleSet second = JsonCodec::decodeClientFeaturesResponse(encoded);
+    auto first = JsonCodec::decodeClientFeaturesResponse(original);
+    ASSERT_TRUE(first.has_value());
+    const std::string encoded = JsonCodec::encodeClientFeaturesResponse(first.value());
+    auto second = JsonCodec::decodeClientFeaturesResponse(encoded);
+    ASSERT_TRUE(second.has_value());
 
-    ASSERT_EQ(first.size(), second.size());
+    ASSERT_EQ(first->size(), second->size());
 
-    for (const auto& [name, toggle] : first.toggles()) {
-        ASSERT_TRUE(second.contains(name)) << "missing toggle: " << name;
-        EXPECT_EQ(second.isEnabled(name), toggle.enabled()) << name;
-        EXPECT_EQ(second.impressionData(name), toggle.impressionData()) << name;
+    for (const auto& [name, toggle] : first->toggles()) {
+        ASSERT_TRUE(second->contains(name)) << "missing toggle: " << name;
+        EXPECT_EQ(second->isEnabled(name), toggle.enabled()) << name;
+        EXPECT_EQ(second->impressionData(name), toggle.impressionData()) << name;
 
-        const unleash::Variant v1 = first.getVariant(name);
-        const unleash::Variant v2 = second.getVariant(name);
+        const unleash::Variant v1 = first->getVariant(name);
+        const unleash::Variant v2 = second->getVariant(name);
         EXPECT_EQ(v1, v2) << "variant mismatch for: " << name;
     }
 }
