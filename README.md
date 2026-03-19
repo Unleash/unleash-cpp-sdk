@@ -43,6 +43,7 @@ Main internal modules:
 - `FlagStore`: thread-safe atomic snapshot holder for `ToggleSet`.
 - `IStorageProvider`: persistence extension point for toggles.
 - `LocalStorageProvider`: default no-op storage provider.
+- `FileStorageProvider`: optional file-backed storage provider.
 - `MetricToggle`: counters for one toggle (`yes`, `no`, variant stats).
 - `MetricList`: collection of `MetricToggle` objects.
 - `MetricsStore`: thread-safe in-memory metrics window and payload builder.
@@ -227,7 +228,12 @@ Pluggable persistence for toggle snapshots:
 - `save(const ToggleSet&)`
 
 Default provider is `LocalStorageProvider`, which is intentionally no-op.
-To persist flags across restarts, provide your own implementation via `ClientConfig::setStorageProvider(...)`.
+`FileStorageProvider` is available if you want disk-backed persistence.
+Filename pattern follows the Node SDK convention:
+- `unleash-backup-<appName>.json`
+- `/` in app name is replaced with `_`
+
+Use `ClientConfig::setStorageProvider(...)` to opt into file persistence.
 
 ## Bootstrap and cache behavior
 
