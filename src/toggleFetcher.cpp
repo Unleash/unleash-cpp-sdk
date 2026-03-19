@@ -149,7 +149,7 @@ ToggleFetcher::FetchResult ToggleFetcher::fetch(const Context& p_ctx) {
     if (httpResponse->status >= utils::httpStatusOkLower && httpResponse->status < utils::httpStatusOkUpper) {
         auto toggleSet = JsonCodec::decodeClientFeaturesResponse(httpResponse->body);
         if (!toggleSet.has_value()) {
-            result.error = "Failed to decode toggles JSON: invalid payload";
+            result.error = "Failed to decode toggles JSON: " + toggleSet.error();
             return result;
         }
         if (toggleSet->size()) {

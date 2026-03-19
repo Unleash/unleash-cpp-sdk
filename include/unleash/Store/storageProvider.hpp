@@ -24,4 +24,22 @@ class LocalStorageProvider final : public IStorageProvider {
     std::optional<ToggleSet> empty_{};
 };
 
+class FileStorageProvider final : public IStorageProvider {
+  public:
+    explicit FileStorageProvider(std::string appName);
+
+    FileStorageProvider(std::string appName, std::string backupPath);
+
+    const std::optional<ToggleSet> get() override;
+
+    void save(const ToggleSet& t) override;
+
+  private:
+    static std::string safeName(std::string s);
+
+    static std::string defaultBackupPath();
+
+    std::string _filePath;
+};
+
 } // namespace unleash

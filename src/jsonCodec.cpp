@@ -75,7 +75,9 @@ internal::Expected<Toggle, std::string> decodeToggle(const JsonCodec::json& item
                           Variant::Payload{itType->get<std::string>(), itValue->get<std::string>()}}};
 }
 
-internal::Expected<ToggleSet, std::string> decodeClientFeaturesResponseExpected(const std::string& jsonText) {
+} // namespace
+
+internal::Expected<ToggleSet, std::string> JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText) {
     JsonCodec::json root = JsonCodec::json::parse(jsonText, nullptr, false);
     if (root.is_discarded()) {
         return internal::unexpected(std::string("input is not valid JSON"));
@@ -106,16 +108,6 @@ internal::Expected<ToggleSet, std::string> decodeClientFeaturesResponseExpected(
     }
 
     return ToggleSet(std::move(vToggles));
-}
-
-} // namespace
-
-std::optional<ToggleSet> JsonCodec::decodeClientFeaturesResponse(const std::string& jsonText) {
-    auto decoded = decodeClientFeaturesResponseExpected(jsonText);
-    if (!decoded.has_value()) {
-        return std::nullopt;
-    }
-    return std::move(decoded.value());
 }
 
 std::string JsonCodec::encodeClientFeaturesResponse(const ToggleSet& toggleSet) {

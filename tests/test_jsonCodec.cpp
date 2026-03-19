@@ -131,6 +131,7 @@ TEST(JsonCodecDecodeClientFeaturesResponse, InvalidJsonReturnsNoValue) {
     auto set = JsonCodec::decodeClientFeaturesResponse(invalid);
 
     EXPECT_FALSE(set.has_value());
+    EXPECT_EQ(set.error(), "input is not valid JSON");
 }
 
 TEST(JsonCodecDecodeClientFeaturesResponse, MissingTogglesFieldReturnsNoValue) {
@@ -139,6 +140,7 @@ TEST(JsonCodecDecodeClientFeaturesResponse, MissingTogglesFieldReturnsNoValue) {
     auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
 
     EXPECT_FALSE(set.has_value());
+    EXPECT_EQ(set.error(), "missing toggles field");
 }
 
 TEST(JsonCodecDecodeClientFeaturesResponse, DuplicateToggleNamesFirstOneWins) {
@@ -172,6 +174,7 @@ TEST(JsonCodecDecodeClientFeaturesResponse, AnyInvalidToggleEntryReturnsNoValue)
     auto set = JsonCodec::decodeClientFeaturesResponse(jsonText);
 
     EXPECT_FALSE(set.has_value());
+    EXPECT_EQ(set.error(), "invalid toggle at index 1: toggle.name is missing or not a string");
 }
 
 TEST(JsonCodecEncodeContextRequestBody, ProducesValidJsonWithContextRoot) {

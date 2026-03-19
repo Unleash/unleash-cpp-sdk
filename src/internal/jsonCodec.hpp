@@ -1,10 +1,10 @@
 #pragma once
 
-#include <optional>
 #include <string>
 
 #include <nlohmann/json.hpp>
 
+#include "expected.hpp"
 #include "unleash/Domain/context.hpp"
 #include "unleash/Domain/toggleSet.hpp"
 #include "unleash/Metrics/metricList.hpp"
@@ -15,7 +15,7 @@ class JsonCodec {
   public:
     using json = nlohmann::json;
 
-    static std::optional<ToggleSet> decodeClientFeaturesResponse(const std::string& jsonText);
+    static internal::Expected<ToggleSet, std::string> decodeClientFeaturesResponse(const std::string& jsonText);
 
     static std::string encodeClientFeaturesResponse(const ToggleSet& toggleSet);
 
