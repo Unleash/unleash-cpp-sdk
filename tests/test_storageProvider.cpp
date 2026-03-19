@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <chrono>
-#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -27,17 +25,6 @@ struct TempDir {
         std::filesystem::remove_all(path, ec);
     }
 };
-
-std::string sanitizeAppName(std::string s) {
-    std::replace_if(
-        s.begin(), s.end(), [](char c) { return !std::isalnum(static_cast<unsigned char>(c)) && c != '-' && c != '_'; },
-        '_');
-    return s;
-}
-
-std::filesystem::path expectedBackupFilePath(const std::filesystem::path& backupDir, const std::string& appName) {
-    return backupDir / ("unleash-backup-" + sanitizeAppName(appName) + ".json");
-}
 
 } // namespace
 
@@ -84,11 +71,9 @@ TEST(FileStorageProvider, SaveThenGetRoundTripsToggleSet) {
 
 TEST(FileStorageProvider, GetReturnsNulloptWhenBackupFileIsEmpty) {
     TempDir dir;
-    const std::string appName = "cppApp";
-    unleash::FileStorageProvider provider(appName, dir.path.string());
+    unleash::FileStorageProvider provider("cppApp", dir.path.string());
 
-    const auto backupFile = expectedBackupFilePath(dir.path, appName);
-    std::filesystem::create_directories(backupFile.parent_path());
+    const auto backupFile = dir.path / "unleash-backup-cppApp.json";
 
     { std::ofstream out(backupFile, std::ios::binary); }
 
@@ -98,11 +83,9 @@ TEST(FileStorageProvider, GetReturnsNulloptWhenBackupFileIsEmpty) {
 
 TEST(FileStorageProvider, GetReturnsNulloptWhenBackupFileIsWhitespaceOnly) {
     TempDir dir;
-    const std::string appName = "cppApp";
-    unleash::FileStorageProvider provider(appName, dir.path.string());
+    unleash::FileStorageProvider provider("cppApp", dir.path.string());
 
-    const auto backupFile = expectedBackupFilePath(dir.path, appName);
-    std::filesystem::create_directories(backupFile.parent_path());
+    const auto backupFile = dir.path / "unleash-backup-cppApp.json";
 
     {
         std::ofstream out(backupFile, std::ios::binary);
@@ -142,7 +125,7 @@ TEST(FileStorageProvider, SaveAndGetWorkWithSanitizedAppName) {
     const unleash::ToggleSet original(std::move(m));
     provider.save(original);
 
-    const auto expectedFile = expectedBackupFilePath(dir.path, appName);
+    const auto expectedFile = dir.path / "unleash-backup-cpp_app_prod_weird_name.json";
     EXPECT_TRUE(std::filesystem::exists(expectedFile));
 
     const auto loaded = provider.get();
@@ -153,11 +136,9 @@ TEST(FileStorageProvider, SaveAndGetWorkWithSanitizedAppName) {
 
 TEST(FileStorageProvider, GetReturnsNulloptWhenBackupFileContainsInvalidJson) {
     TempDir dir;
-    const std::string appName = "cppApp";
-    unleash::FileStorageProvider provider(appName, dir.path.string());
+    unleash::FileStorageProvider provider("cppApp", dir.path.string());
 
-    const auto backupFile = expectedBackupFilePath(dir.path, appName);
-    std::filesystem::create_directories(backupFile.parent_path());
+    const auto backupFile = dir.path / "unleash-backup-cppApp.json";
 
     {
         std::ofstream out(backupFile, std::ios::binary);
