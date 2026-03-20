@@ -48,9 +48,8 @@ int main() {
 
         std::cout << "Flag '" << flag << "' enabled: " << std::boolalpha << client.isEnabled(flag);
 
-        if (auto variant = client.getVariant(flag); variant.has_value()) {
-            std::cout << "  variant: " << variant->name();
-        }
+        const auto variant = client.getVariant(flag);
+        std::cout << "  variant: " << variant.name();
 
         std::cout << std::endl;
     }

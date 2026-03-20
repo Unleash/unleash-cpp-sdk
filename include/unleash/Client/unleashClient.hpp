@@ -39,7 +39,7 @@ class UnleashClient {
 
     bool isEnabled(const std::string& flagName);
 
-    std::optional<Variant> getVariant(const std::string& flagName);
+    Variant getVariant(const std::string& flagName);
     bool impressionData(const std::string& flagName) const;
 
     // Context handlers:

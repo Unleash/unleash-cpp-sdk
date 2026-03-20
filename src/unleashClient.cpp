@@ -278,12 +278,12 @@ bool UnleashClient::isEnabled(const std::string& flagName) {
     return enabled;
 }
 
-std::optional<Variant> UnleashClient::getVariant(const std::string& flagName) {
+Variant UnleashClient::getVariant(const std::string& flagName) {
     if (!this->isReady())
-        return std::nullopt;
+        return Variant::disabledFactory();
     auto toggleSet = _flagStore.snapshot();
     if (!toggleSet || !toggleSet->contains(flagName))
-        return std::nullopt;
+        return Variant::disabledFactory();
     bool enabled = toggleSet->isEnabled(flagName);
     Variant variant = toggleSet->getVariant(flagName);
     _metricStore.addVariantMetric(flagName, enabled, variant.name());
