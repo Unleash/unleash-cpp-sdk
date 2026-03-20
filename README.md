@@ -79,8 +79,8 @@ Header: `include/unleash/Client/unleashClient.hpp`
 - `bool isEnabled(const std::string& flagName)`
   - Returns `false` if client is not ready, flag set is missing, or flag is missing.
   - On success, records enable metric and may emit impression event.
-- `std::optional<Variant> getVariant(const std::string& flagName)`
-  - Returns `nullopt` if not ready or flag missing.
+- `Variant getVariant(const std::string& flagName)`
+  - Returns `Variant::disabledFactory()` if not ready or flag missing.
   - On success, records variant metric and may emit impression event.
 - `bool impressionData(const std::string& flagName) const`
   - Reads per-flag impression setting from current snapshot.
@@ -420,18 +420,18 @@ int main() {
     for(int i = 0 ; i < 5; i++)
     {
       bool enabled = client.isEnabled(flagName);
-      std::optional<unleash::Variant> variant = client.getVariant(flagName);
+      unleash::Variant variant = client.getVariant(flagName);
       if(enabled)
       {
         std::cout<<"(Check for "<<flagName<<"): this flag is enabled |";
-        if(!variant.has_value()) std::cout<<"No variant defined..."<<std::endl;
+        if(!variant.enabled()) std::cout<<"No variant defined..."<<std::endl;
         else
         {
-          std::cout<<"Variant with name: "<<variant.value().name()<< "| ";
-          if(!variant.value().hasPayload()) std::cout<<"with no payload."<<std::endl;
+          std::cout<<"Variant with name: "<<variant.name()<<"| ";
+          if(!variant.hasPayload()) std::cout<<"with no payload."<<std::endl;
           else
           {
-            unleash::Variant::Payload p = variant.value().payload().value();
+            unleash::Variant::Payload p = variant.payload().value();
             std::cout<<"with payload (type:"<<p.type()<<"/value:"<<p.value()<<")"<<std::endl;
           }
         }
