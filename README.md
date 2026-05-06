@@ -304,15 +304,18 @@ export UNLEASH_FEATURE_NAME="my-flag"   # optional
 
 The live example prints init/ready/update/error events and continuously prints flag/variant evaluation results once per second.
 
-### Requirements:
+### Requirements
+
 - C++17 compiler
 - python3 (necessary for venv and conan install)
 - CMake >= 3.16
 - `nlohmann_json`
 - `libcurl`
 - `GTest` (if building tests)
+- `brew install ninja` (if on macos)
 
-### Build:
+### Build
+
 1. Create and activate a Python virtual environment for Conan:
 
    ```bash
