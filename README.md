@@ -346,9 +346,10 @@ The live example prints init/ready/update/error events and continuously prints f
                                     #or build directly using: ' cmake --build build/release -j"$(nproc)" ')
     ```
 
-### Run tests:
+### Run tests
+
 ```bash
-ctest --test-dir build --output-on-failure
+ctest --test-dir build/release --output-on-failure
 ```
 
 
